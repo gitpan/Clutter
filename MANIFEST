@@ -1,0 +1,32 @@
+AUTHORS
+ChangeLog
+Clutter.pm
+clutterperl.h
+copyright.pod
+doctypes
+examples/rects.pl
+Makefile.PL
+MANIFEST			This list of files
+MANIFEST.SKIP
+maps
+README
+t/0.t
+t/1.t
+t/ClutterGroup.t
+t/ClutterLabel.t
+t/ClutterRectangle.t
+t/ClutterStage.t
+xs/Clutter.xs
+xs/ClutterActor.xs
+xs/ClutterCloneTexture.xs
+xs/ClutterEvent.xs
+xs/ClutterGroup.xs
+xs/ClutterLabel.xs
+xs/ClutterMedia.xs
+xs/ClutterRectangle.xs
+xs/ClutterStage.xs
+xs/ClutterTexture.xs
+xs/ClutterTimeline.xs
+xs/ClutterTypes.xs
+xs/ClutterVideoTexture.xs
+META.yml                                 Module meta-data (added by MakeMaker)
