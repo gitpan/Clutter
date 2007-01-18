@@ -25,22 +25,20 @@
 
 #include "clutterperl.h"
 
-
 MODULE = Clutter::Types		PACKAGE = Clutter::Color
 
-
 ClutterColor_copy *
-new (class, red, green, blue, alpha)
+new (class, red=0, green=0, blue=0, alpha=0)
 	guint8 red
 	guint8 green
 	guint8 blue
 	guint8 alpha
     PREINIT:
-        ClutterColor color;
+        ClutterColor color = { 0, };
     CODE:
-        color.red = red;
+        color.red   = red;
 	color.green = green;
-	color.blue = blue;
+	color.blue  = blue;
 	color.alpha = alpha;
         RETVAL = &color;
     OUTPUT:
@@ -85,6 +83,7 @@ red (ClutterColor *color, SV *newvalue = 0)
 		default:
 			RETVAL = 0;
 			g_assert_not_reached ();
+                        break;
 	}
 	if (newvalue) {
 	        switch (ix) {
@@ -94,6 +93,7 @@ red (ClutterColor *color, SV *newvalue = 0)
 			case 3: color->alpha = SvIV (newvalue); break;
 			default:
 				g_assert_not_reached ();
+                                break;
 		}
 	}
     OUTPUT:
@@ -111,7 +111,101 @@ values (ClutterColor *color)
 	PUSHs (sv_2mortal (newSViv (color->blue)));
 	PUSHs (sv_2mortal (newSViv (color->alpha)));
 
+guint32
+to_pixel (ClutterColor *color)
+    CODE:
+        RETVAL = clutter_color_to_pixel (color);
+    OUTPUT:
+        RETVAL
 
+
+ClutterColor_copy *
+from_pixel (class, guint32 pixel)
+    PREINIT:
+        ClutterColor color = { 0, };
+    CODE:
+        clutter_color_from_pixel (&color, pixel);
+        RETVAL = &color;
+    OUTPUT:
+        RETVAL
+
+=for apidoc
+=for signature (hue, luminance, saturation) = $color->to_hls
+=cut
+void
+to_hls (ClutterColor *color)
+    PREINIT:
+        guint8 h, l, s;
+    PPCODE:
+        clutter_color_to_hls (color, &h, &l, &s);
+        EXTEND (SP, 3);
+        PUSHs (sv_2mortal (newSVuv (h)));
+        PUSHs (sv_2mortal (newSVuv (l)));
+        PUSHs (sv_2mortal (newSVuv (s)));
+
+ClutterColor_copy *
+from_hls (class, guint hue, guint luminance, guint saturation)
+    PREINIT:
+        ClutterColor color = { 0, };
+    CODE:
+        clutter_color_from_hls (&color, hue, luminance, saturation);
+        RETVAL = &color;
+    OUTPUT:
+        RETVAL
+
+gboolean
+equal (const ClutterColor *a, const ClutterColor *b)
+    CODE:
+        RETVAL = clutter_color_equal (a, b);
+    OUTPUT:
+        RETVAL
+
+ClutterColor_copy *
+lighten (ClutterColor *color)
+    PREINIT:
+        ClutterColor lighter = { 0, };
+    CODE:
+        clutter_color_lighten (color, &lighter);
+        RETVAL = &lighter;
+    OUTPUT:
+        RETVAL
+
+ClutterColor_copy *
+darken (ClutterColor *color)
+    PREINIT:
+        ClutterColor darker = { 0, };
+    CODE:
+        clutter_color_darken (color, &darker);
+        RETVAL = &darker;
+    OUTPUT:
+        RETVAL
+
+ClutterColor_copy *
+shade (ClutterColor *color, gdouble factor)
+    PREINIT:
+        ClutterColor shade = { 0, };
+    CODE:
+        clutter_color_shade (color, &shade, factor);
+        RETVAL = &shade;
+    OUTPUT:
+        RETVAL
+
+ClutterColor_copy *
+parse (const gchar *str)
+    PREINIT:
+        ClutterColor parsed = { 0, };
+    CODE:
+        clutter_color_parse (str, &parsed);
+        RETVAL = &parsed;
+    OUTPUT:
+        RETVAL
+
+gchar_own *
+to_string (ClutterColor *color)
+    CODE:
+        RETVAL = clutter_color_to_string (color);
+    OUTPUT:
+        RETVAL
 
 MODULE = Clutter::Types		PACKAGE = Clutter::Geometry
 
@@ -282,3 +376,20 @@ values (ClutterActorBox *box)
 	PUSHs (sv_2mortal (newSViv (box->y1)));
 	PUSHs (sv_2mortal (newSViv (box->x2)));
 	PUSHs (sv_2mortal (newSViv (box->y2)));
+
+MODULE = Clutter::Types		PACKAGE = Clutter::Knot
+
+
+ClutterKnot_copy *
+new (class, x, y)
+	gint x
+	gint y
+    PREINIT:
+        ClutterKnot knot;
+    CODE:
+        knot.x = x;
+	knot.y = y;
+    	RETVAL = &knot;
+    OUTPUT:
+        RETVAL
+

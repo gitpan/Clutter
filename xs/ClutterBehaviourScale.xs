@@ -25,38 +25,16 @@
 
 #include "clutterperl.h"
 
-MODULE = Clutter::Stage		PACKAGE = Clutter::Stage	PREFIX = clutter_stage_
+MODULE = Clutter::Behaviour::Scale    PACKAGE = Clutter::Behaviour::Scale   PREFIX = clutter_behaviour_scale_
 
-ClutterActor_noinc *
-clutter_stage_get_default (class)
+=for enum ClutterGravity
+=cut
+
+ClutterBehaviour_noinc *
+clutter_behaviour_scale_new (class, alpha=NULL, scale_begin, scale_end, gravity)
+        ClutterAlpha_ornull *alpha
+        gdouble scale_begin
+        gdouble scale_end
+        ClutterGravity gravity
     C_ARGS:
-        /* void */
-
-## Window   clutter_stage_get_xwindow         (ClutterStage *stage);
-##
-## gboolean clutter_stage_set_xwindow_foreign (ClutterStage *stage,
-##                                             Window        xid);
-
-void
-clutter_stage_set_color (ClutterStage *stage, ClutterColor *color)
-
-ClutterColor_copy *
-clutter_stage_get_color (ClutterStage *stage)
-    PREINIT:
-        ClutterColor color;
-    CODE:
-        clutter_stage_get_color (stage, &color);
-	RETVAL = &color;
-    OUTPUT:
-        RETVAL
-
-ClutterActor *
-clutter_stage_get_actor_at_pos (ClutterStage *stage, gint x, gint y)
-
-GdkPixbuf_noinc *
-clutter_stage_snapshot (stage, x, y, width, height)
-        ClutterStage *stage
-        gint x
-        gint y
-        gint width
-        gint height
+        alpha, scale_begin, scale_end, gravity

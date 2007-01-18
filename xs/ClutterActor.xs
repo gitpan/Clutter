@@ -130,6 +130,8 @@ show (ClutterActor *actor)
 	Clutter::Actor::queue_redraw = 5
 	Clutter::Actor::destroy      = 6
 	Clutter::Actor::unparent     = 7
+        Clutter::Actor::show_all     = 8
+        Clutter::Actor::hide_all     = 9
     CODE:
         switch (ix) {
 		case 0: clutter_actor_show         (actor); break;
@@ -140,6 +142,8 @@ show (ClutterActor *actor)
 		case 5: clutter_actor_queue_redraw (actor); break;
 	        case 6: clutter_actor_destroy      (actor); break;
 		case 7: clutter_actor_unparent     (actor); break;
+		case 8: clutter_actor_show_all     (actor); break;
+		case 9: clutter_actor_hide_all     (actor); break;
 		default:
 			g_assert_not_reached ();
 	}
@@ -198,8 +202,14 @@ clutter_actor_get_abs_position (ClutterActor *actor)
 	PUSHs (sv_2mortal (newSViv (x)));
 	PUSHs (sv_2mortal (newSViv (y)));
 
+void
+clutter_actor_set_width (ClutterActor *actor, guint width)
+
 guint
 clutter_actor_get_width (ClutterActor *actor)
+
+void
+clutter_actor_set_height (ClutterActor *actor, guint height)
 
 guint
 clutter_actor_get_height (ClutterActor *actor)
@@ -250,6 +260,9 @@ ClutterActor_ornull *
 clutter_actor_get_parent (ClutterActor *actor)
 
 void
+clutter_actor_reparent (ClutterActor *actor, ClutterActor *new_parent)
+
+void
 clutter_actor_raise (ClutterActor *actor, ClutterActor *below)
 
 void
@@ -266,3 +279,48 @@ clutter_actor_set_depth (ClutterActor *actor, gint depth)
 
 gint
 clutter_actor_get_depth (ClutterActor *actor)
+
+void
+clutter_actor_set_scale (ClutterActor *actor, gdouble scale_x, gdouble scale_y)
+
+=for apidoc
+=for signature (scale_x, scale_y) = $actor->get_scale
+=cut
+void
+clutter_actor_get_scale (ClutterActor *actor)
+    PREINIT:
+        gdouble scale_x, scale_y;
+    PPCODE:
+        clutter_actor_get_scale (actor, &scale_x, &scale_y);
+        EXTEND (SP, 2);
+        PUSHs (sv_2mortal (newSVnv (scale_x)));
+        PUSHs (sv_2mortal (newSVnv (scale_y)));
+
+=for apidoc
+=for signature (width, height) = $actor->get_abs_size
+=cut
+void
+clutter_actor_get_abs_size (ClutterActor *actor)
+    PREINIT:
+        guint width, height;
+    PPCODE:
+        clutter_actor_get_abs_size (actor, &width, &height);
+        EXTEND (SP, 2);
+        PUSHs (sv_2mortal (newSVuv (width)));
+        PUSHs (sv_2mortal (newSVuv (height)));
+
+=for apidoc
+=for signature (width, height) = $actor->get_size
+=cut
+void
+clutter_actor_get_size (ClutterActor *actor)
+    PREINIT:
+        guint width, height;
+    PPCODE:
+        clutter_actor_get_size (actor, &width, &height);
+        EXTEND (SP, 2);
+        PUSHs (sv_2mortal (newSVuv (width)));
+        PUSHs (sv_2mortal (newSVuv (height)));
+
+void
+clutter_actor_move_by (ClutterActor *actor, gint dx, gint dy)

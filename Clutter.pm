@@ -31,13 +31,13 @@ our @ISA = qw(DynaLoader);
 # the version scheme is:
 #   CLUTTER_MAJOR
 #   dot
-#   CLUTTER_MINOR * 100 + CLUTTER_MICRO
-#   bindings release
+#   CLUTTER_MINOR * 100 + CLUTTER_MICRO * 10 + bindings release
+#
 # this scheme allocates enough space for ten releases
 # of the bindings for each point release of libclutter,
 # which should be enough even in case of brown paper
 # bag releases. -- ebassi
-our $VERSION = '0.110';
+our $VERSION = '0.200';
 
 sub import {
     my $class = shift;
@@ -45,15 +45,15 @@ sub import {
     my $init = 0;
 
     foreach (@_) {
-	if (/^-?init$/) {
-	    $init = 1;
-	}
-	else {
-	    $class->VERSION($_);
-	}
+	    if (/^-?init$/) {
+            $init = 1;
+        }
+        else {
+            $class->VERSION($_);
+        }
     }
 
-    Clutter->init if $init;
+    Clutter->init() if $init;
 }
 
 sub dl_load_flags { $^O eq 'darwin' ? 0x00 : 0x01 }
@@ -62,6 +62,83 @@ require XSLoader;
 XSLoader::load('Clutter', $VERSION);
 
 # Preloaded methods go here
+
+package Clutter::Alpha;
+
+sub ramp
+{
+    my $alpha = shift;
+    my $timeline = $alpha->get_timeline();
+
+    my $current_frame_num = $timeline->get_current_frame();
+    my $n_frames = $timeline->get_n_frames();
+
+    if ($current_frame_num > ($n_frames / 2)) {
+        return ($n_frames - $current_frame_num)
+               * Clutter::Alpha->MAX_ALPHA
+               / ($n_frames / 2);
+    } else {
+        return $current_frame_num
+               * Clutter::Alpha->MAX_ALPHA
+               / ($n_frames / 2);
+    }
+}
+
+sub ramp_dec
+{
+    my $alpha = shift;
+    my $timeline = $alpha->get_timeline();
+
+    my $current_frame_num = $timeline->get_current_frame();
+    my $n_frames = $timeline->get_n_frames();
+
+    return ($n_frames - $current_frame_num)
+           * Clutter::Alpha->MAX_ALPHA
+           / $n_frames;
+}
+
+sub ramp_inc
+{
+    my $alpha = shift;
+    my $timeline = $alpha->get_timeline();
+
+    my $current_frame_num = $timeline->get_current_frame();
+    my $n_frames = $timeline->get_n_frames();
+
+    return $current_frame_num
+           * Clutter::Alpha->MAX_ALPHA
+           / $n_frames;
+}
+
+sub sine
+{
+    use Math::Trig ':pi';
+
+    my $alpha = shift;
+    my $timeline = $alpha->get_timeline();
+
+    my $current_frame_num = $timeline->get_current_frame();
+    my $n_frames = $timeline->get_n_frames();
+
+    my $x = ($current_frame_num * pi2) / $n_frames;
+    my $sine = (sin ($x - (pip2)) + 1) * .5;
+
+    return ($sine * Clutter::Alpha->MAX_ALPHA);
+}
+
+package Clutter::Color;
+
+use overload
+    '==' => \&Clutter::Color::equal,
+    fallback => 1;
+
+package Clutter::Knot;
+
+use overload
+    '==' => \&Clutter::Knot::equal,
+    fallback => 1;
+
+package Clutter;
 
 1;
 
@@ -81,8 +158,8 @@ Clutter - Simple GL-based canvas library
   $stage->set_size(800, 600);
 
   my $label = Clutter::Label->new("Sans 30", "Clutter");
-  $label->set_position($stage->get_width / 2,
-                       $stage->get_height / 2);
+  $label->set_position($stage->get_width() / 2,
+                       $stage->get_height() / 2);
   $stage->add($label);
 
   $stage->show_all;
@@ -110,7 +187,17 @@ Gtk2::Pango, Gtk2::Gdk::Pixbuf and GStreamer.
 
 =head1 DIFFERENCES FROM C API
 
-FIXME
+In order to feel more Perl-ish, the Clutter API has been slightly
+changed for the Perl bindings.
+
+=over 4
+
+=item ClutterCloneTexture =E<gt> Clutter::Texture::Clone
+
+The C<ClutterCloneTexture> has been moved under the L<Clutter::Texture>
+package name, to reinforce the inheritance.
+
+=back
 
 =head1 AUTHOR
 

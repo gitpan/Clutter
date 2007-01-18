@@ -25,11 +25,12 @@
 
 #include "clutterperl.h"
 
-MODULE = Clutter::VideoTexture	PACKAGE = Clutter::VideoTexture	PREFIX = clutter_video_texture_
+MODULE = Clutter::Behaviour::Opacity    PACKAGE = Clutter::Behaviour::Opacity   PREFIX = clutter_behaviour_opacity_
 
-
-ClutterActor *
-clutter_video_texture_new (class)
+ClutterBehaviour_noinc *
+clutter_behaviour_opacity_new (class, alpha=NULL, opacity_start, opacity_end)
+        ClutterAlpha_ornull *alpha
+        guint8 opacity_start
+        guint8 opacity_end
     C_ARGS:
-        /* void */
-
+        alpha, opacity_start, opacity_end
