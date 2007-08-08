@@ -161,6 +161,26 @@ equal (const ClutterColor *a, const ClutterColor *b)
         RETVAL
 
 ClutterColor_copy *
+add (const ClutterColor *a, const ClutterColor *b)
+    PREINIT:
+        ClutterColor color = { 0, };
+    CODE:
+        clutter_color_add (a, b, &color);
+        RETVAL = &color;
+    OUTPUT:
+        RETVAL
+
+ClutterColor_copy *
+subtract (const ClutterColor *a, const ClutterColor *b)
+    PREINIT:
+        ClutterColor color = { 0, };
+    CODE:
+        clutter_color_subtract (a, b, &color);
+        RETVAL = &color;
+    OUTPUT:
+        RETVAL
+
+ClutterColor_copy *
 lighten (ClutterColor *color)
     PREINIT:
         ClutterColor lighter = { 0, };
@@ -294,13 +314,12 @@ values (ClutterGeometry *geometry)
 
 MODULE = Clutter::Types		PACKAGE = Clutter::ActorBox
 
-
 ClutterActorBox_copy *
 new (class, x1, y1, x2, y2)
-	gint x1
-	gint y1
-	gint x2
-	gint y2
+	gint32 x1
+	gint32 y1
+	gint32 x2
+	gint32 y2
     PREINIT:
         ClutterActorBox box;
     CODE:
@@ -336,7 +355,7 @@ new (class, x1, y1, x2, y2)
 =for arg newvalue (integer)
 =cut
 
-gint
+gint32
 x1 (ClutterActorBox *box, SV *newvalue = 0)
     ALIAS:
         Clutter::ActorBox::y1 = 1
@@ -437,4 +456,252 @@ values (ClutterKnot *knot)
         EXTEND (SP, 2);
 	PUSHs (sv_2mortal (newSViv (knot->x)));
 	PUSHs (sv_2mortal (newSViv (knot->y)));
+
+MODULE = Clutter::Types		PACKAGE = Clutter::Vertex
+
+
+ClutterVertex_copy *
+new (class, x, y, z)
+	gint32 x
+	gint32 y
+        gint32 z
+    PREINIT:
+        ClutterVertex vertex;
+    CODE:
+        vertex.x = x;
+	vertex.y = y;
+        vertex.z = z;;
+    	RETVAL = &vertex;
+    OUTPUT:
+        RETVAL
+
+=for apidoc Clutter::Vertex::x
+=for signature integer = $vertex->x
+=for signature oldvalue = $vertex->x ($newvalue)
+=for arg newvalue (integer)
+=cut
+
+=for apidoc Clutter::Vertex::y
+=for signature integer = $vertex->y
+=for signature oldvalue = $vertex->y ($newvalue)
+=for arg newvalue (integer)
+=cut
+
+=for apidoc Clutter::Vertex::z
+=for signature integer = $vertex->z
+=for signature oldvalue = $vertex->z ($newvalue)
+=for arg newvalue (integer)
+=cut
+
+gint
+x (ClutterVertex *vertex, SV *newvalue = 0)
+    ALIAS:
+        Clutter::Vertex::y = 1
+        Clutter::Vertex::z = 2
+    CODE:
+        switch (ix) {
+		case 0: RETVAL = vertex->x; break;
+		case 1: RETVAL = vertex->y; break;
+		case 2: RETVAL = vertex->z; break;
+		default:
+			RETVAL = 0;
+			g_assert_not_reached ();
+	}
+	if (newvalue) {
+	        switch (ix) {
+			case 0: vertex->x = SvIV (newvalue); break;
+			case 1: vertex->y = SvIV (newvalue); break;
+			case 2: vertex->z = SvIV (newvalue); break;
+			default:
+				g_assert_not_reached ();
+		}
+	}
+    OUTPUT:
+        RETVAL
+
+=for apidoc
+=for signature (x, y, z) = $vertex->values
+=cut
+void
+values (ClutterVertex *vertex)
+    PPCODE:
+        EXTEND (SP, 3);
+	PUSHs (sv_2mortal (newSViv (vertex->x)));
+	PUSHs (sv_2mortal (newSViv (vertex->y)));
+	PUSHs (sv_2mortal (newSViv (vertex->z)));
+
+gboolean
+equal (const ClutterVertex *a, const ClutterVertex *b)
+    CODE:
+        RETVAL = (a->x == b->x && a->y == b->y && a->z == b->z);
+    OUTPUT:
+        RETVAL
+
+MODULE = Clutter::Types		PACKAGE = Clutter::Margin
+
+ClutterMargin_copy *
+new (class, top, right, bottom, left)
+	gint32 top
+	gint32 right
+	gint32 bottom
+	gint32 left
+    PREINIT:
+        ClutterMargin margin = { 0, };
+    CODE:
+        margin.top = top;
+	margin.right = right;
+	margin.bottom = bottom;
+	margin.left = left;
+    	RETVAL = &margin;
+    OUTPUT:
+        RETVAL
+
+=for apidoc Clutter::Margin::top
+=for signature integer = $margin->top
+=for signature oldvalue = $margin->top ($newvalue)
+=for arg newvalue (integer)
+=cut
+
+=for apidoc Clutter::Margin::right
+=for signature integer = $margin->right
+=for signature oldvalue = $margin->right ($newvalue)
+=for arg newvalue (integer)
+=cut
+
+=for apidoc Clutter::Margin::bottom
+=for signature integer = $margin->bottom
+=for signature oldvalue = $margin->bottom ($newvalue)
+=for arg newvalue (integer)
+=cut
+
+=for apidoc Clutter::Margin::left
+=for signature integer = $margin->left
+=for signature oldvalue = $margin->left ($newvalue)
+=for arg newvalue (integer)
+=cut
+
+gint32
+top (ClutterMargin *margin, SV *newvalue = 0)
+    ALIAS:
+        Clutter::Margin::right = 1
+	Clutter::Margin::bottom = 2
+	Clutter::Margin::left = 3
+    CODE:
+        switch (ix) {
+		case 0: RETVAL = margin->top; break;
+		case 1: RETVAL = margin->right; break;
+		case 2: RETVAL = margin->bottom; break;
+		case 3: RETVAL = margin->left; break;
+		default:
+			RETVAL = 0;
+			g_assert_not_reached ();
+	}
+	if (newvalue) {
+	        switch (ix) {
+			case 0: margin->top = SvIV (newvalue); break;
+			case 1: margin->right = SvIV (newvalue); break;
+			case 2: margin->bottom = SvIV (newvalue); break;
+			case 3: margin->left = SvIV (newvalue); break;
+			default:
+				g_assert_not_reached ();
+		}
+	}
+    OUTPUT:
+        RETVAL
+
+=for apidoc
+=for signature (top, right, bottom, left) = $margin->values
+=cut
+void
+values (ClutterMargin *margin)
+    PPCODE:
+        EXTEND (SP, 4);
+	PUSHs (sv_2mortal (newSViv (margin->top)));
+	PUSHs (sv_2mortal (newSViv (margin->right)));
+	PUSHs (sv_2mortal (newSViv (margin->bottom)));
+	PUSHs (sv_2mortal (newSViv (margin->left)));
+
+MODULE = Clutter::Types		PACKAGE = Clutter::Padding
+
+ClutterPadding_copy *
+new (class, top, right, bottom, left)
+	gint32 top
+	gint32 right
+	gint32 bottom
+	gint32 left
+    PREINIT:
+        ClutterPadding padding = { 0, };
+    CODE:
+        padding.top = top;
+	padding.right = right;
+	padding.bottom = bottom;
+	padding.left = left;
+    	RETVAL = &padding;
+    OUTPUT:
+        RETVAL
+
+=for apidoc Clutter::Padding::top
+=for signature integer = $padding->top
+=for signature oldvalue = $padding->top ($newvalue)
+=for arg newvalue (integer)
+=cut
+
+=for apidoc Clutter::Padding::right
+=for signature integer = $padding->right
+=for signature oldvalue = $padding->right ($newvalue)
+=for arg newvalue (integer)
+=cut
+
+=for apidoc Clutter::Padding::bottom
+=for signature integer = $padding->bottom
+=for signature oldvalue = $padding->bottom ($newvalue)
+=for arg newvalue (integer)
+=cut
+
+=for apidoc Clutter::Padding::left
+=for signature integer = $padding->left
+=for signature oldvalue = $padding->left ($newvalue)
+=for arg newvalue (integer)
+=cut
+
+gint32
+top (ClutterPadding *padding, SV *newvalue = 0)
+    ALIAS:
+        Clutter::Padding::right = 1
+	Clutter::Padding::bottom = 2
+	Clutter::Padding::left = 3
+    CODE:
+        switch (ix) {
+		case 0: RETVAL = padding->top; break;
+		case 1: RETVAL = padding->right; break;
+		case 2: RETVAL = padding->bottom; break;
+		case 3: RETVAL = padding->left; break;
+		default:
+			RETVAL = 0;
+			g_assert_not_reached ();
+	}
+	if (newvalue) {
+	        switch (ix) {
+			case 0: padding->top = SvIV (newvalue); break;
+			case 1: padding->right = SvIV (newvalue); break;
+			case 2: padding->bottom = SvIV (newvalue); break;
+			case 3: padding->left = SvIV (newvalue); break;
+			default:
+				g_assert_not_reached ();
+		}
+	}
+    OUTPUT:
+        RETVAL
+
+=for apidoc
+=for signature (top, right, bottom, left) = $padding->values
+=cut
+void
+values (ClutterPadding *padding)
+    PPCODE:
+        EXTEND (SP, 4);
+	PUSHs (sv_2mortal (newSViv (padding->top)));
+	PUSHs (sv_2mortal (newSViv (padding->right)));
+	PUSHs (sv_2mortal (newSViv (padding->bottom)));
+	PUSHs (sv_2mortal (newSViv (padding->left)));
 

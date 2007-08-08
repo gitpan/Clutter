@@ -1,8 +1,4 @@
-use Test::More tests => 6;
-
-use Clutter;
-
-Clutter->init();
+use Clutter::TestHelper tests => 5;
 
 my $group = Clutter::Group->new;
 isa_ok($group, 'Clutter::Group', 'check ISA');
@@ -11,17 +7,16 @@ my @children = $group->get_children;
 is(@children, 0, 'no children yet');
 
 my $rectangle = Clutter::Rectangle->new;
+
 $group->add($rectangle);
+is($rectangle->get_parent, $group, 'check add');
 
 @children = $group->get_children;
 is(@children, 1, 'just one children');
 eq_array(@children, [ $rectangle, ], 'check children');
 
-is($rectangle->get_parent, $group, 'check add');
 
 $group->remove($rectangle);
-isnt($rectangle->get_parent, $group, 'check remove');
-
 @children = $group->get_children;
 is(@children, 0, 'no children left');
 

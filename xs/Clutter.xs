@@ -35,6 +35,7 @@ BOOT:
 #include "register.xsh"
 #include "boot.xsh"
 	gperl_handle_logs_for ("Clutter");
+        gperl_handle_logs_for ("ClutterGst");
 
 guint
 MAJOR_VERSION ()
@@ -54,7 +55,7 @@ MAJOR_VERSION ()
         RETVAL
 
 =for apidoc
-=signature (MAJOR, MINOR, MICRO) = Clutter->GET_VERSION_INFO
+=for signature (MAJOR, MINOR, MICRO) = Clutter->GET_VERSION_INFO
 Fetch as a list the version of clutter for which Clutter was built.
 =cut
 void
@@ -76,6 +77,29 @@ CHECK_VERSION (class, major, minor, micro)
     OUTPUT:
         RETVAL
 
+=for apidoc
+=for signature flavour = Clutter->FLAVOUR
+
+Returns the backend (or I<flavour>) against which the underlying C
+library was compiled.
+=cut
+void
+FLAVOUR (class)
+    PPCODE:
+        XPUSHs (sv_2mortal (newSVpv (CLUTTER_FLAVOUR, 0)));
+        PERL_UNUSED_VAR (ax);
+
+=for apidoc
+=for signature cogl = Clutter->COGL
+
+Returns the OpenGL library used by the underlying C library.
+=cut
+void
+COGL (class)
+    PPCODE:
+        XPUSHs (sv_2mortal (newSVpv (CLUTTER_COGL, 0)));
+        PERL_UNUSED_VAR (ax);
+
 =for object Clutter::main
 =cut
 
@@ -85,13 +109,37 @@ clutter_init (class=NULL)
         GPerlArgv *pargv;
     CODE:
         pargv = gperl_argv_new ();
-	
 	RETVAL = clutter_init (&pargv->argc, &pargv->argv);
-
 	gperl_argv_update (pargv);
 	gperl_argv_free (pargv);
     OUTPUT:
         RETVAL
+
+#ifndef CLUTTERPERL_GST
+
+# /* in case we are not building Clutter without the GStreamer support
+#  * we need a stub for clutter_gst_init(), to warn the user if the
+#  * Clutter module was imported using the '-gst-init' parameter or if
+#  * there's an explicit call to Clutter::Gst->init()
+#  */
+
+ClutterInitError
+clutter_gst_init_dummy (class=NULL)
+    ALIAS:
+        Clutter::Gst::init = 0
+    PREINIT:
+        GPerlArgv *pargv;
+    CODE:
+        PERL_UNUSED_VAR (ax);
+        pargv = gperl_argv_new ();
+        g_warning ("Clutter was built without the support for GStreamer");
+        RETVAL = clutter_init (&pargv->argc, &pargv->argv);
+        gperl_argv_update (pargv); 
+        gperl_argv_free (pargv);
+    OUTPUT:
+        RETVAL
+
+#endif /* CLUTTERPERL_GST */
 
 void
 clutter_main (class)
@@ -105,5 +153,20 @@ clutter_main_quit (class)
 
 guint
 clutter_main_level (class)
+    C_ARGS:
+        /* void */
+
+gboolean
+clutter_get_debug_enabled (class)
+    C_ARGS:
+        /* void */
+
+gboolean
+clutter_get_show_fps (class)
+    C_ARGS:
+        /* void */
+
+gulong
+clutter_get_timestamp (void)
     C_ARGS:
         /* void */
