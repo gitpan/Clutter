@@ -12,15 +12,29 @@ sub import
     shift;
     my %opts = (@_);
 
-    plan skip_all => $opts{skip_all} if $opts{skip_all};
+    plan skip_all => $opts{skip_all}
+        if $opts{skip_all};
 
-    croak "test must be provided at import" unless exists $opts{tests};
+    croak "test must be provided at import"
+        unless exists $opts{tests};
 
     if ($opts{at_least_version}) {
         my ($rmajor, $rminor, $rmicro, $text) = @{$opts{at_least_version}};
 
         plan skip_all => $text
             unless Clutter->CHECK_VERSION($rmajor, $rminor, $rmicro);
+    }
+
+    if ($opts{sub_module}) {
+        my @modules = Clutter->SUPPORTED_MODULES();
+        my $no_skip = 0;
+
+        foreach my $m (@modules) {
+            $no_skip = 1 if $opts{sub_module} eq $m;
+        }
+
+        plan skip_all => "no support for $opts{sub_module}"
+            unless $no_skip;
     }
 
     if (!Clutter->init()) {
@@ -38,9 +52,13 @@ sub import
 
 package main;
 
+# we obviously need Clutter
 use Clutter;
+
+# and Test::More
 use Test::More;
 
+# enforce the use of these constants in the tests
 use Glib qw( TRUE FALSE );
 
 1;
@@ -66,17 +84,21 @@ just skipped.
 
 =over
 
-=item tests
+=item tests => $number
 
 The number of tests to be performed
 
-=item at_least_version
+=item at_least_version => [ $major, $minor, $micro, $reason ]
 
 A reference to a list that is checked with Clutter->CHECK_VERSION
 
 =item skip_all
 
 Simply skip all tests
+
+=item sub_module => $module_name
+
+Skip all tests if Clutter was not compiled against I<module_name>.
 
 =back
 

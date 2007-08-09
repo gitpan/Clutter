@@ -1,3 +1,49 @@
+2007-08-09  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* Clutter.pm:
+	* README:
+	* NEWS: Bump up version, and release 0.402
+
+2007-08-09  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* Makefile.PL: Clean up a bit the Makefile.PL
+
+2007-08-09  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* xs/Clutter.xs: Add ->SUPPORTED_MODULES(), a module method that
+	returns a list of supported modules against which Clutter was
+	compiled.
+
+	* tools/TestHelper.pm: Add the sub_module option, that allows
+	to skip all the tests if Clutter wasn't compiled against the
+	desired sub-module.
+
+	* t/GtkClutterEmbed.t: Depend on being compiled against
+	clutter-gtk.
+
+2007-08-09  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* xs/ClutterBox.xs: Document how to subclass a Clutter::Box.
+	Change the way Clutter::Box::PACK_CHILD() works: we pass a
+	Clutter::BoxChild with a zero-filled child_coords and we expect
+	the child coordinates as a return value. Much more perl-ish
+	than modifying the passed hashref.
+
+2007-08-08  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* t/ClutterBox.t:
+	* t/ClutterHBox.t:
+	* t/ClutterVBox.t: Add tests for Clutter::Box and subclasses.
+
+2007-08-08  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* t/ClutterAlpha.t:
+	* t/ClutterTimeline.t: Add tests.
+
+2007-08-08  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* xs/ClutterBox.xs: Remove unused variable to fix a compiler warning.
+
 2007-08-08  Emmanuele Bassi  <ebassi@openedhand.com>
 
 	* Clutter.pm:

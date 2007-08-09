@@ -1,7 +1,6 @@
-use Test::More tests => 4;
+use Clutter::TestHelper tests => 4, sub_module => 'gtk';
 
 use Gtk2 '-init';
-use Clutter '-init';
 
 my $embed = Gtk2::ClutterEmbed->new();
 isa_ok($embed, 'Gtk2::Widget', 'is a widget');

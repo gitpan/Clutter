@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                Clutter
-version:             0.401
+version:             0.402
 abstract:            Simple GL-based canvas library
 license:             ~
 generated_by:        ExtUtils::MakeMaker version 6.36
