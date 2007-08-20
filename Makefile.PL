@@ -9,12 +9,12 @@ use ExtUtils::MakeMaker;
 
 # minimum required version of dependancies we need to build
 our %build_reqs = (
-	'perl-ExtUtils-Depends'   => '0.2',
-	'perl-ExtUtils-PkgConfig' => '1.03',
-	'perl-Glib'               => '1.140', # for Glib::MakeHelper
-	'perl-Gtk2'               => '1.140',
-	'perl-Cairo'              => '1.00',
-    'Clutter'                 => '0.4.0',
+    'perl-ExtUtils-Depends'   => '0.2',
+    'perl-ExtUtils-PkgConfig' => '1.03',
+    'perl-Glib'               => '1.140', # for Glib::MakeHelper
+    'perl-Gtk2'               => '1.140',
+    'perl-Cairo'              => '1.00',
+    'Clutter'                 => '0.4.1',
 );
 
 # Writing a fake Makefile ensures that CPAN will pick up the correct

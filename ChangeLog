@@ -1,3 +1,59 @@
+2007-08-20  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* Makefile.PL: Require the new stable release of Clutter.
+
+	* Clutter.pm:
+	* README:
+	* NEWS: Bump up to 0.410 and release.
+
+2007-08-20  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* t/ClutterActor.t: fix comment
+
+	* examples/boxes.pl: Print dump of the clicked child.
+
+2007-08-20  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* xs/Clutter.xs: Support the new thread-safety API, and put it
+	under the Clutter::Threads namespace.
+
+	* xs/ClutterEffect.xs: Bind clutter_effect_depth().
+
+2007-08-10  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* xs/ClutterEffect.xs: Call the Perl callback only if there
+	is one; add Clutter::Effect->rotate_[xyz]() package methods.
+
+2007-08-10  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* xs/ClutterEffect.xs: Fix title for the description section.
+
+2007-08-10  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* xs/ClutterLayoyt.xs: Allow pure Perl implementations of the
+	ClutterLayoyt::tune-request() virtual function. Document
+	the arguments and return values of the Clutter::Layout methods.
+
+2007-08-10  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* xs/ClutterUnits.xs: Explain what Clutter::Units are and
+	when you need to use them.
+
+2007-08-09  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* xs/ClutterActor.xs: Rework QUERY_COORDS() so that it can be
+	used as a fallback when subclassing, like:
+
+	  return $self->SUPER::QUERY_COORDS()
+	
+	just like Clutter::Box::PACK_CHILD().
+	
+	* t/ClutterActor.t: Add Clutter::Actor subclassing tests.
+
+2007-08-09  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* Clutter.pm: Post-release bump to 0.403
+
 2007-08-09  Emmanuele Bassi  <ebassi@openedhand.com>
 
 	* Clutter.pm:
