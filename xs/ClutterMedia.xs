@@ -427,11 +427,12 @@ clutter_media_set_playing (ClutterMedia *media, gboolean playing)
 gboolean
 clutter_media_get_playing (ClutterMedia *media)
 
-void
-clutter_media_set_position (ClutterMedia *media, gint position)
-
-gint
-clutter_media_get_position (ClutterMedia *media)
+## yey collisions!
+##void
+##clutter_media_set_position (ClutterMedia *media, gint position)
+##
+##gint
+##clutter_media_get_position (ClutterMedia *media)
 
 void
 clutter_media_set_volume (ClutterMedia *media, gdouble volume)

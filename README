@@ -1,4 +1,4 @@
-Clutter version 0.410
+Clutter version 0.420
 =====================
 
 Perl bindings to the Clutter OpenGL canvas.  Clutter aims to give a nice
@@ -40,7 +40,7 @@ This module requires these other modules and libraries:
   perl >= 5.8.0
   Glib >= 1.120 (Perl module)
   Gtk2 >= 1.120 (Perl module)
-  Clutter >= 0.4.0 (C library)
+  Clutter >= 0.4.2 (C library)
   ClutterGst >= 0.4.0 (C library)
   ClutterGtk >= 0.4.0 (C library)
   ClutterCairo >= 0.4.0 (C library)

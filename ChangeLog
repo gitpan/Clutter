@@ -1,3 +1,13 @@
+2007-09-19  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* Makefile.PL: Require the new stable release of Clutter core.
+
+2007-09-19  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* xs/ClutterEntry.xs:
+	* xs/ClutterMedia.xs: Remove the colliding accessor methods
+	to the position property.
+
 2007-08-20  Emmanuele Bassi  <ebassi@openedhand.com>
 
 	* Makefile.PL: Require the new stable release of Clutter.

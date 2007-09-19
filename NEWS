@@ -1,3 +1,8 @@
+Clutter 0.420
+=============
+* Fix methods collisions in Clutter::Actor, Clutter::Entry and Clutter::Media
+* Require the new stable release of Clutter
+
 Clutter 0.410
 =============
 * Fix Clutter::Actor::QUERY_COORDS to return an array
