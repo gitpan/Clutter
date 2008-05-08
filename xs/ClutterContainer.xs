@@ -25,67 +25,101 @@
 
 #include "clutterperl.h"
 
-static void
-clutterperl_call_method (GType       gtype,
-                         const char *method,
-                         gint        flags)
-{
-  HV *stash;
-  GV *slot;
+/*
+ * GInterface support
+ */
 
-  stash = gperl_object_stash_from_type (gtype);
-  slot = gv_fetchmethod (stash, method);
+#define GET_METHOD(obj, name) \
+       HV * stash = gperl_object_stash_from_type (G_OBJECT_TYPE (obj)); \
+       GV * slot = gv_fetchmethod (stash, name);
 
-  if (slot && GvCV (slot))
-    call_sv ((SV *) GvCV (slot), flags);
-}
+#define METHOD_EXISTS (slot && GvCV (slot))
+
+#define PREP(obj) \
+       dSP; \
+       ENTER; \
+       SAVETMPS; \
+       PUSHMARK (SP) ; \
+       PUSHs (sv_2mortal (newSVGObject (G_OBJECT (obj))));
+
+#define CALL \
+       PUTBACK; \
+       call_sv ((SV *) GvCV (slot), G_VOID | G_DISCARD);
+
+#define FINISH \
+       FREETMPS; \
+       LEAVE;
 
 static void
 clutterperl_container_add (ClutterContainer *container,
                            ClutterActor     *actor)
 {
-  dSP;
+  GET_METHOD (container, "ADD");
 
-  ENTER;
-  SAVETMPS;
-  PUSHMARK (SP);
+  if (METHOD_EXISTS)
+    {
+      PREP (container);
 
-  EXTEND (SP, 2);
-  PUSHs (sv_2mortal (newSVClutterActor (CLUTTER_ACTOR (container))));
-  PUSHs (sv_2mortal (newSVClutterActor (actor)));
+      XPUSHs (sv_2mortal (newSVClutterActor (actor)));
 
-  PUTBACK;
+      CALL;
 
-  clutterperl_call_method (G_OBJECT_TYPE (container),
-                           "ADD",
-                           G_VOID | G_DISCARD);
+      FINISH;
+    }
+}
 
-  FREETMPS;
-  LEAVE;
+typedef struct {
+  ClutterCallback func;
+  gpointer data;
+} ClutterPerlContainerForeachFunc;
+
+static void
+create_callback (ClutterCallback   func,
+                 gpointer          data,
+                 SV              **code_return,
+                 SV              **data_return)
+{
+  HV *stash;
+  gchar *sub;
+  CV *dummy = NULL;
+  SV *code, *my_data;
+  ClutterPerlContainerForeachFunc *stuff;
+
+  stash = gv_stashpv ("Clutter::Container::ForeachFunc", TRUE);
+
+  sub = g_strdup_printf ("__clutterperl_container_foreach_func_%p", data);
+  dummy = newCONSTSUB (stash, sub, NULL);
+  g_free (sub);
+
+  code = sv_bless (newRV_noinc ((SV *) dummy), stash);
+
+  stuff = g_new0 (ClutterPerlContainerForeachFunc, 1);
+  stuff->func = func;
+  stuff->data = data;
+
+  my_data = newSViv (PTR2IV (stuff));
+  sv_magic ((SV *) dummy, 0, PERL_MAGIC_ext, (const char *) my_data, 0);
+
+  *code_return = code;
+  *data_return = my_data;
 }
 
 static void
 clutterperl_container_remove (ClutterContainer *container,
                               ClutterActor     *actor)
 {
-  dSP;
+  GET_METHOD (container, "REMOVE");
 
-  ENTER;
-  SAVETMPS;
-  PUSHMARK (SP);
+  if (METHOD_EXISTS)
+    {
+      PREP (container);
 
-  EXTEND (SP, 2);
-  PUSHs (sv_2mortal (newSVClutterActor (CLUTTER_ACTOR (container))));
-  PUSHs (sv_2mortal (newSVClutterActor (actor)));
+      XPUSHs (sv_2mortal (newSVClutterActor (actor)));
 
-  PUTBACK;
+      CALL;
 
-  clutterperl_call_method (G_OBJECT_TYPE (container),
-                           "REMOVE",
-                           G_VOID | G_DISCARD);
-
-  FREETMPS;
-  LEAVE;
+      FINISH;
+    }
 }
 
 static void
@@ -93,7 +127,65 @@ clutterperl_container_foreach (ClutterContainer *container,
                                ClutterCallback   callback,
                                gpointer          callback_data)
 {
+  GET_METHOD (container, "FOREACH");
 
+  if (METHOD_EXISTS)
+    {
+      SV *code, *data;
+
+      PREP (container);
+
+      create_callback (callback, data, &code, &data);
+
+      XPUSHs (sv_2mortal (newSVsv (code)));
+      XPUSHs (sv_2mortal (newSVsv (data)));
+
+      CALL;
+
+      FINISH;
+    }
+}
+
+static void
+clutterperl_container_raise (ClutterContainer *container,
+                             ClutterActor     *child,
+                             ClutterActor     *sibling)
+{
+  GET_METHOD (container, "RAISE");
+
+  if (METHOD_EXISTS)
+    {
+      PREP (container);
+
+      XPUSHs (sv_2mortal (newSVClutterActor (child)));
+      if (sibling)
+        XPUSHs (sv_2mortal (newSVClutterActor (sibling)));
+
+      CALL;
+
+      FINISH;
+    }
+}
+
+static void
+clutterperl_container_lower (ClutterContainer *container,
+                             ClutterActor     *child,
+                             ClutterActor     *sibling)
+{
+  GET_METHOD (container, "LOWER");
+
+  if (METHOD_EXISTS)
+    {
+      PREP (container);
+
+      XPUSHs (sv_2mortal (newSVClutterActor (child)));
+      if (sibling)
+        XPUSHs (sv_2mortal (newSVClutterActor (sibling)));
+
+      CALL;
+
+      FINISH;
+    }
 }
 
 static void
@@ -102,6 +194,8 @@ clutterperl_container_init (ClutterContainerIface *iface)
   iface->add = clutterperl_container_add;
   iface->remove = clutterperl_container_remove;
   iface->foreach = clutterperl_container_foreach;
+  iface->raise = clutterperl_container_raise;
+  iface->lower = clutterperl_container_lower;
 }
 
 static void
@@ -143,9 +237,81 @@ following methods is required:
 
 =item ADD ($container, $actor)
 
+Called to add I<actor> to I<container>. The implementation should emit
+the B<::actor-added> signal once the actor has been added.
+
+=over
+
+=item o $container (Clutter::Container)
+
+=item o $actor (Clutter::Actor)
+
+=back
+
 =item REMOVE ($container, $actor)
 
-=item FOREACH ($container, $callback, $callback_data)
+Called to remove I<actor> from I<container>. The implementation should emit
+the B<::actor-removed> signal once the actor has been removed.
+
+=over
+
+=item o $container (Clutter::Container)
+
+=item o $actor (Clutter::Actor)
+
+=back
+
+=item RAISE ($container, $child, $sibling)
+
+Called when raising I<child> above I<sibling>. If I<sibling> is undefined,
+then I<child> should be raised above every other child of I<container>.
+
+=over
+
+=item o $container (Clutter::Container)
+
+=item o $child (Clutter::Actor)
+
+=item o $sibling (Clutter::Actor)
+
+=back
+
+=item LOWER ($container, $child, $sibling)
+
+Called when lowering I<child> below I<sibling>. If I<sibling> is undefined,
+then I<child> should be lowered below every other child of I<container>.
+
+=over
+
+=item o $container (Clutter::Container)
+
+=item o $child (Clutter::Actor)
+
+=item o $sibling (Clutter::Actor)
+
+=back
+
+=item FOREACH ($container, $function, $data)
+
+Called when iterating over every child of I<container>. For each child
+the I<function> must be called with the actor and the passed I<data>, for
+instance:
+
+  foreach my $child ($container->{children}) {
+    $function ($child, $data);
+  }
+
+This function will also be called by the B<get_children> method.
+
+=over
+
+=item o $container (Clutter::Container)
+
+=item o $function (code reference)
+
+=item o $data (scalar) data to pass to the function
+
+=back
 
 =back
 
@@ -221,3 +387,43 @@ clutter_container_foreach (container, callback, callback_data=NULL)
                                    real_callback);
 	gperl_callback_destroy (real_callback);
 
+ClutterActor_ornull *
+clutter_container_find_child_by_name (container, name)
+        ClutterContainer *container
+        const gchar *name
+
+void
+clutter_container_raise_child (container, actor, sibling)
+        ClutterContainer *container
+        ClutterActor *actor
+        ClutterActor *sibling
+
+void
+clutter_container_lower_child (container, actor, sibling)
+        ClutterContainer *container
+        ClutterActor *actor
+        ClutterActor *sibling
+
+MODULE = Clutter::Container     PACKAGE = Clutter::Container::ForeachFunc
+
+void
+invoke (ClutterActor *actor, SV *data)
+    PREINIT:
+        ClutterPerlContainerForeachFunc *stuff;
+    CODE:
+        stuff = INT2PTR (ClutterPerlContainerForeachFunc*, SvIV (data));
+        if (!stuff | !stuff->func)
+                croak("Invalid data passed to the foreach function");
+        stuff->func (actor, stuff->data);
+
+void
+DESTROY (SV *code)
+    PREINIT:
+        MAGIC *mg;
+        ClutterPerlContainerForeachFunc *stuff;
+    CODE:
+        if (!gperl_sv_is_defined (code) || !SvROK (code) || !(mg = mg_find (SvRV (code), PERL_MAGIC_ext)))
+                return;
+        stuff = INT2PTR (ClutterPerlContainerForeachFunc*, SvIV ((SV *) mg->mg_ptr));
+        sv_unmagic (SvRV (code), PERL_MAGIC_ext);
+        g_free (stuff);

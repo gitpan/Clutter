@@ -1,28 +1,294 @@
-2007-09-19  Emmanuele Bassi  <ebassi@openedhand.com>
+2008-05-08  Emmanuele Bassi  <ebassi@openedhand.com>
 
-	* Makefile.PL: Require the new stable release of Clutter core.
+	* Clutter.pm: Bump to 0.620
 
-2007-09-19  Emmanuele Bassi  <ebassi@openedhand.com>
+	* Makefile.PL: Bump requirements:
+		clutter-0.6 >= 0.6.2
+		clutter-gtk-0.6 >= 0.6.1
+		clutter-cairo-0.6 >= 0.6.1
 
-	* xs/ClutterEntry.xs:
-	* xs/ClutterMedia.xs: Remove the colliding accessor methods
-	to the position property.
+	* tools/genkeysyms.pl: Require clutter-0.6
 
-2007-08-20  Emmanuele Bassi  <ebassi@openedhand.com>
+	* xs/ClutterCairo.xs: Add new ClutterCairo API.
 
-	* Makefile.PL: Require the new stable release of Clutter.
+	* xs/ClutterContainer.xs: Fix gperl_sv_is_defined().
 
-	* Clutter.pm:
+	* xs/ClutterEntry.xs: Return a boolean in handle_key_event().
+
+	* xs/ClutterScript.xs: Check if the GConnectFlags type has
+	already been registered by Glib or Gtk2, and if not register
+	it ourselves.
+
+2008-02-19  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* Makefile.PL: Require Clutter suite >= 0.6
+
+	* Clutter.pm: Bump to 0.600
+
 	* README:
-	* NEWS: Bump up to 0.410 and release.
+	* NEWS: Release 0.600
 
-2007-08-20  Emmanuele Bassi  <ebassi@openedhand.com>
+2008-02-19  Emmanuele Bassi  <ebassi@openedhand.com>
 
-	* t/ClutterActor.t: fix comment
+	* examples/script.pl: Fix scale behaviour properties.
 
-	* examples/boxes.pl: Print dump of the clicked child.
+2008-02-19  Emmanuele Bassi  <ebassi@openedhand.com>
 
-2007-08-20  Emmanuele Bassi  <ebassi@openedhand.com>
+	* xs/ClutterActor.xs: Bind the relative transformation API.
+
+	* xs/ClutterTexture.xs: Bind the from_actor constructor.
+
+2008-02-03  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* Makefile.PL: Require Clutter core >= 0.5.5
+
+	* Clutter.pm: Bump to 0.550
+
+	* xs/ClutterBehaviourScale.xs:
+	* xs/ClutterEffect.xs:
+	* xs/ClutterEntry.xs: Update after upstream API changes.
+
+	* t/ClutterBehaviourScale.t: Update test.
+
+2008-01-23  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* Makefile.PL: Require trunk for clutter-gtk
+
+	* clutterperl.h:
+	* maps-gtk:
+	* xs/ClutterGtk.xs: Update for upstream change.
+
+2008-01-17  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* Clutter.pm: Clean up some wording, and remove the old FSF address
+	from the licesing notes (use the URL instead).
+
+2008-01-17  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* MANIFEST:
+	* examples/gtk-clutter.pl: Add Gtk2::ClutterEmbed usage example.
+
+2008-01-17  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* Clutter.pm: Bump up to 0.530, as we require trunk
+
+	* Makefile.PL: Require clutter-core 0.5.3
+
+	* examples/custom-actor.pl: Fix SYNOPSIS.
+
+	* t/ClutterBehaviourScale.t: Test the new Clutter::BehaviourScale
+	accessors
+
+	* xs/ClutterEffect.xs:
+	* xs/ClutterBehaviourScale.xs: Update after the upstream API
+	change in ClutterBehaviourScale and clutter_effect_scale()
+
+	* xs/ClutterModel.xs: Use clutter_model_insertv() instead of
+	calling clutter_model_insert_value().
+
+2008-01-09  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* t/ClutterModel.t: Update test suite.
+
+2008-01-09  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	reviewed by: <delete if not using a buddy>
+
+	* Clutter.pm: Bump up to 0.510 as we require the 0.5.1 release
+
+	* README:
+	* Makefile.PL: Update Clutter requirements
+
+	* MANIFEST:
+	* maps:
+	* xs_files: s/ClutterModelDefault/ClutterListModel/
+
+	* xs/ClutterListModel.xs: Update wrapper after rename
+
+2008-01-09  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* Clutter.pm: Post-release bump to 0.501
+
+2008-01-09  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* NEWS:
+	* README: Release 0.500
+
+2008-01-09  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* examples/custom-actor.pl: Add a ::clicked signal and the
+	event handling marshallers to emit it.
+
+2008-01-08  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* xs/ClutterActor.xs: Fix documentation
+
+	* xs/ClutterTypes.xs: Add more documentation for the ::Color
+	and ::ActorBox perldoc pages; add the convenience functions:
+
+	  Clutter::ActorBox::origin
+	  Clutter::ActorBox::size
+	
+	for getting the origin and the size of and actor box.
+
+2008-01-08  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* MANIFEST: Add the new custom actor example
+
+	* examples/custom-actor.pl: Custom actor example; show how to
+	subclass Clutter::Actor and override key methods. Requires
+	the OpenGL module installed.
+
+	* xs/ClutterActor.xs: Fix a lot of bugs in the overridable
+	virtual functions; unfortunately, the ActorBox passed to
+	QUERY_COORDS() is an in-out parameter, so we need it on the
+	stack as well. subclasses will receive the box on the stack
+	and will have to return an array of coordinates (x1, y1, x2, y2)
+	with the new bounding box. Actors don't usually need the box
+	on the stack and can just ignore it, though.
+
+	* t/ClutterActor.t: There's no point in chaining up QUERY_COORDS;
+	make sure we get the right box size in subclasses; chain up
+	REQUEST_COORDS, which is instead needed.
+
+2008-01-08  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* xs/ClutterActor.xs: Allow overriding the PICK virtual function.
+
+2008-01-08  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* MANIFEST:
+	* maps:
+	* xs_files: Add xs/ClutterShader.xs and its types.
+
+	* xs/ClutterActor.xs: Bind Clutter::Actor shaders API.
+
+	* xs/ClutterShader.xs: Bind Clutter::Shader, the OpenGL
+	programmable pipeline abstraction.
+
+2008-01-08  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* xs/ClutterModel.xs: Bind:
+
+	  clutter_model_set_sort()
+	  clutter_model_set_filter()
+
+	and start providing basic functionality for subclassing
+	Clutter::Model with a pure-perl implementation.
+
+2008-01-07  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* examples/script.pl: Fix the timeline to be used by the
+	behaviours, and quit when the score terminates.
+
+	* xs/ClutterModel.xs: Use the vector based API for appending
+	and prepending rows to the model.
+
+	* t/ClutterModel.t: Fix the Clutter::Model API test
+
+2008-01-07  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* Makefile.PL: Require unstable GLib, for gperl_sv_defined()
+
+2008-01-07  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* Clutter.pm: Add overloading for Clutter::Container::ForeachFunc
+	invocation.
+
+	* xs/ClutterContainer.xs: Finally wrap the FOREACH virtual
+	function of the Clutter::Container interface.
+
+	* xs/ClutterModel.xs:
+	* xs/ClutterModelDefault.xs:
+	* xs/ClutterModelIter.xs: Wrap more Clutter::Model and
+	Clutter::Model::Iter API; still not completely working: requires
+	API changes upstream for the append and prepend methods to
+	work correctly.
+
+	* t/ClutterModel.t: Add tests for Clutter::Model.
+
+	* maps:
+	* MANIFEST:
+	* xs_files: Add new files
+
+2007-12-10  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* MANIFEST:
+	* maps:
+	* xs_files:
+	* xs/ClutterModel.xs: Initial bindings for Clutter::Model.
+
+	* t/ClutterModel.t: Test suite for Clutter::Model API.
+
+2007-12-10  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* xs/ClutterBehaviourEllipse.xs: Use the mPUSH?() macros to
+	avoid the sv_2mortal(newSV?v()) tediousness.
+
+	* t/ClutterBehaviourEllipse.t: Fix the alignment.
+
+2007-12-07  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* xs/ClutterActor.xs:
+	* xs/ClutterAlpha.xs:
+	* xs/ClutterBehaviour.xs:
+	* xs/ClutterUnits.xs: Even more documentation.
+
+	* examples/behaviour.pl: Use a custom alpha function, and exercise
+	the Clutter::Timeline->get_progress() API at the same time.
+
+2007-12-07  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* xs/ClutterActor.xs: Port some of the C API documentation
+	and description to the Perl bindings.
+
+	* examples/script.pl: Remove a useless signal handler definition.
+
+2007-12-07  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* xs/ClutterScript.xs: Fix documentation
+
+2007-12-07  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* MANIFEST: Update
+
+	* xs/ClutterScript.xs: Actually add ClutterScript bindings
+	to the repository.
+
+	* examples/script.pl: Example code for both ClutterScript
+	and ClutterScore.
+
+2007-12-07  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* xs_files: Add ClutterScript.xs
+
+	* xs/ClutterScript.xs: Add bindings for ClutterScript.
+
+	* Clutter.pm: Implement Clutter::Script::connect_signals().
+
+2007-12-07  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* xs_files: Add ClutterScore.xs
+
+	* xs/ClutterScore.xs: Add bindings for ClutterScore.
+
+2007-12-07  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* *: Sync up with upstream C API changes. As much as I hate
+	doing huge commits, this is the only way to keep the bindings
+	in a sane state.
+
+	Missing bits:
+	  - ClutterTimeoutPool: still need to think of a nice way to
+	    wrap it up in Perl
+	  - ClutterScore
+	  - ClutterScript
+	  - ClutterShader: this will have to wait until the dust
+	    settles upstream
+
+2007-08-17  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* Clutter.pm: Bump to 0.500.
 
 	* xs/Clutter.xs: Support the new thread-safety API, and put it
 	under the Clutter::Threads namespace.

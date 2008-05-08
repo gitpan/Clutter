@@ -38,15 +38,13 @@ clutterperl_actor_show_all (ClutterActor *actor)
                 SAVETMPS;
                 PUSHMARK (SP);
 
-                EXTEND (SP, 1);
                 PUSHs (newSVClutterActor (actor));
                 
                 PUTBACK;
-
                 call_sv ((SV *) GvCV (slot), G_VOID | G_DISCARD);
-
                 SPAGAIN;
 
+                PUTBACK;
                 FREETMPS;
                 LEAVE;
         }
@@ -65,15 +63,13 @@ clutterperl_actor_hide_all (ClutterActor *actor)
                 SAVETMPS;
                 PUSHMARK (SP);
 
-                EXTEND (SP, 1);
                 PUSHs (newSVClutterActor (actor));
                 
                 PUTBACK;
-
                 call_sv ((SV *) GvCV (slot), G_VOID | G_DISCARD);
-
                 SPAGAIN;
 
+                PUTBACK;
                 FREETMPS;
                 LEAVE;
         }
@@ -92,15 +88,13 @@ clutterperl_actor_paint (ClutterActor *actor)
                 SAVETMPS;
                 PUSHMARK (SP);
 
-                EXTEND (SP, 1);
                 PUSHs (newSVClutterActor (actor));
                 
                 PUTBACK;
-
                 call_sv ((SV *) GvCV (slot), G_VOID | G_DISCARD);
-
                 SPAGAIN;
 
+                PUTBACK;
                 FREETMPS;
                 LEAVE;
         }
@@ -128,6 +122,7 @@ clutterperl_actor_request_coords (ClutterActor    *actor,
                 call_sv ((SV *) GvCV (slot), G_VOID | G_DISCARD);
                 SPAGAIN;
 
+                PUTBACK;
                 FREETMPS;
                 LEAVE;
         }
@@ -148,8 +143,9 @@ clutterperl_actor_query_coords (ClutterActor    *actor,
                 SAVETMPS;
                 PUSHMARK (SP);
 
-                EXTEND (SP, 1);
+                EXTEND (SP, 2);
                 PUSHs (newSVClutterActor (actor));
+                PUSHs (sv_2mortal (newSVClutterActorBox (box)));
 
                 PUTBACK;
                 count = call_sv ((SV *) GvCV (slot), G_ARRAY);
@@ -173,13 +169,94 @@ clutterperl_actor_query_coords (ClutterActor    *actor,
 }
 
 static void
+clutterperl_actor_realize (ClutterActor *actor)
+{
+        HV *stash = gperl_object_stash_from_type (G_OBJECT_TYPE (actor));
+        GV *slot = gv_fetchmethod (stash, "REALIZE");
+
+        if (slot && GvCV (slot)) {
+                dSP;
+
+                ENTER;
+                SAVETMPS;
+                PUSHMARK (SP);
+
+                PUSHs (newSVClutterActor (actor));
+                
+                PUTBACK;
+                call_sv ((SV *) GvCV (slot), G_VOID | G_DISCARD);
+                SPAGAIN;
+
+                PUTBACK;
+                FREETMPS;
+                LEAVE;
+        }
+}
+
+static void
+clutterperl_actor_unrealize (ClutterActor *actor)
+{
+        HV *stash = gperl_object_stash_from_type (G_OBJECT_TYPE (actor));
+        GV *slot = gv_fetchmethod (stash, "UNREALIZE");
+
+        if (slot && GvCV (slot)) {
+                dSP;
+
+                ENTER;
+                SAVETMPS;
+                PUSHMARK (SP);
+
+                PUSHs (newSVClutterActor (actor));
+                
+                PUTBACK;
+                call_sv ((SV *) GvCV (slot), G_VOID | G_DISCARD);
+                SPAGAIN;
+
+                PUTBACK;
+                FREETMPS;
+                LEAVE;
+        }
+}
+
+static void
+clutterperl_actor_pick (ClutterActor       *actor,
+                        const ClutterColor *pick_color)
+{
+        HV *stash = gperl_object_stash_from_type (G_OBJECT_TYPE (actor));
+        GV *slot = gv_fetchmethod (stash, "PICK");
+
+        if (slot && GvCV (slot)) {
+                dSP;
+
+                ENTER;
+                SAVETMPS;
+                PUSHMARK (SP);
+
+                EXTEND (SP, 2);
+                PUSHs (newSVClutterActor (actor));
+                PUSHs (newSVClutterColor (pick_color));
+                
+                PUTBACK;
+                call_sv ((SV *) GvCV (slot), G_VOID | G_DISCARD);
+                SPAGAIN;
+
+                PUTBACK;
+                FREETMPS;
+                LEAVE;
+        }
+}
+
+static void
 clutterperl_actor_class_init (ClutterActorClass *klass)
 {
-        klass->show_all = clutterperl_actor_show_all;
-        klass->hide_all = clutterperl_actor_hide_all;
-        klass->paint = clutterperl_actor_paint;
+        klass->show_all       = clutterperl_actor_show_all;
+        klass->hide_all       = clutterperl_actor_hide_all;
+        klass->paint          = clutterperl_actor_paint;
         klass->request_coords = clutterperl_actor_request_coords;
-        klass->query_coords = clutterperl_actor_query_coords;
+        klass->query_coords   = clutterperl_actor_query_coords;
+        klass->realize        = clutterperl_actor_realize;
+        klass->unrealize      = clutterperl_actor_unrealize;
+        klass->pick           = clutterperl_actor_pick;
 }
 
 static void
@@ -211,10 +288,84 @@ of L<Clutter::Behaviour>.
 
 =for position post_enums
 
+=head1 TRANSFORMATIONS ORDER
+
+The OpenGL modelview matrix for the actor is constructed from the actor
+settings by the following order of operations:
+
+=over
+
+=item 1. Translation by actor (x, y) coordinates
+
+=item 2. Scaling by I<scale_x> and I<scale_y>
+
+=item 3. Negative translation by the anchor point (x, y) coordinates
+
+=item 4. Rotation around z axis
+
+=item 5. Rotation around y axis
+
+=item 6. Rotation around x axis
+
+=item 7. Translation by actor depth (z coordinate)
+
+=item 8. Clip stencil is applied
+
+B<Note>: clipping not an operation on the matrix as such, but done as part
+of the transformation set up
+
+=back
+
+=head1 EVENT HANDLING
+
+=over
+
+=item Actors emit pointer events only if set reactive
+
+=item The stage is always reactive by default
+
+=item Events are handled by connecting signal handlers to the event signals
+
+Event signals usually have the C< -event > postfix.
+
+=item Event handlers B<must> return I<TRUE> if they handled the event
+
+When an event handler returns I<TRUE> it will interrupt the event emission chain.
+Event handlers B<must> return I<FALSE> if the emission should continue instead.
+
+=item If an actor is grabbing events it will be the only receiver
+
+B<Note>: Key focus can be seen a "soft grab"; an actor with key focus will
+receive key events even if it's not grabbing them.
+
+=item Keyboard events are emitted if an actor has key focus
+
+B<Note>: By default, the stage has key focus.
+
+=item Motion events (motion, enter, leave) are not emitted if not enabled
+
+B<Note>: Motion events are enabled by default. The motion event is only
+emitted by the L<Clutter::Stage> if the motion events delivery is disabled.
+
+=item The event emission has two phases: I<capture> and I<bubble>
+
+An emitted event starts in the I<capture> phase, beginning at the stage and
+traversing every child actor until the event source actor is reached. The
+emission then enters the I<bubble> phase, traversing back up the chain via
+parents until it reaches the stage. Any event handler can abort this chain
+by returning I<TRUE> (meaning "event handled")
+
+=item Pointer events will 'pass through' non reactive actors
+
+E.g., if two actors are overlaying, the non reactive actor will be ignored.
+
+=back
+
 =head1 DERIVING NEW ACTORS
 
-Clutter provides some default actors. You may derive a new actor from any of
-these, or directly from the Clutter::Actor class itself.
+Clutter intentionally provides only few default actors. You are encouraged to
+derive a new actor from any of these, or directly from the Clutter::Actor class
+itself.
 
 The new actor must be a GObject, so you must follow the normal procedure
 for creating a new Glib::Obect (i.e., either L<Glib::Object::Subclass> or
@@ -237,19 +388,31 @@ actor class, you should provide a new implementation of the following methods:
 
 This is called each time the user requests the actor to update its coordinates
 and size. The I<box> contains the upper left and lower right coordinates of the
-box surrounding the actor.
+box surrounding the actor. Every class overriding the C< REQUEST_COORDS >
+method B<must> chain up to the parent's class method, using the usual
+C< SUPER > mechanism provided by Perl, for instance:
 
-=item  (x1, y1, x2, y2) = QUERY_COORDS ($actor)
+  $actor->SUPER::REQUEST_COORDS($box);
+
+See L<perlobj>.
+
+=item  (x1, y1, x2, y2) = QUERY_COORDS ($actor, $box)
 
 =over
 
 =item o $actor (Clutter::Actor)
+
+=item o $box (Clutter::ActorBox)
 
 =back
 
 This is called each time the actor is queried for its coordinates and size.
 The returned array must contains the upper left and lower right coordinates of
 the box surrounding the actor, in coordinates relative to the actor's parent.
+
+B<Note>: Actors can mostly ignore the I<box> parameter: it will contain the
+current coordinates of the actor's bounding box, which can be taken into
+account when recomputing the new box.
 
 =back
 
@@ -268,8 +431,9 @@ Other overridable methods when deriving a C<Clutter::Actor> are:
 This is called each time the actor needs to be painted. You can call native
 GL calls using Perl bindings for the OpenGL API. If you are implementing a
 containter actor, or if you are operating transformations on the actor while
-painting, you should push the GL matrix first with C<glPushMatrix>, paint and
-the pop it back with C<glPopMatrix>.
+painting, you should push the GL matrix first with C< glPushMatrix >, paint
+and the pop it back with C< glPopMatrix >; this will allow your children to
+follow the same transformations.
 
 =item SHOW_ALL ($actor)
 
@@ -294,6 +458,85 @@ some non-exposed children should be visible only if certain conditions arise.
 
 See C<SHOW_ALL> above.
 
+=item REALIZE ($actor)
+
+=item UNREALIZE ($actor)
+
+=over
+
+=item o $actor (Clutter::Actor)
+
+=back
+
+Actors might have to allocate resources before being shown for the first
+time, for instance GL-specific data. The C< REALIZE > virtual function will
+be called by the C< show > method. Inside this function you should set the
+C< realized > flag, or chain up to the parent class C< REALIZE > method.
+
+The C< UNREALIZE > virtual function will be called when destroying the
+actor, and allows the release of the resources allocated inside C< REALIZE >.
+
+=item PICK ($actor, $pick_color)
+
+=over
+
+=item o $actor (Clutter::Actor)
+
+=item o $pick_color (Clutter::Color)
+
+=back
+
+The C< PICK > virtual function will be called when drawing the scene with
+a mask of the actors in order to detect actor at a given pair of coordinates
+relative to the stage (see the C<get_actor_at_pos> method of
+L<Clutter::Stage>).
+
+The actor should paint its bounding box with the passed I<pick_color>, and
+its eventual children should be painted as well by invoking the C<paint>
+method. The default implementation of the C< PICK > method is the equivalent
+of:
+
+  sub PICK {
+    my ($self, $pick_color) = @_;
+
+    glColor4ub($pick_color->red,
+               $pick_color->green,
+               $pick_color->blue,
+               $pick_color->alpha);
+    glRecti($self->get_x(),
+            $self->get_y(),
+            $self->get_x() + $self->get_width(),
+            $self->get_y() + $self->get_height());
+  }
+
+Which will render the actor as a rectangle the size of its bounding box (Note:
+there is no need to override the C< PICK > virtual function in this case).
+
+An actor with internal children, or implementing the L<Clutter::Container>
+interface should, instead, use:
+
+  sub PICK {
+    my ($self, $pick_color) = @_;
+
+    glPushMatrix();
+
+    glColor4ub($pick_color->red,
+               $pick_color->green,
+               $pick_color->blue,
+               $pick_color->alpha);
+    glRecti($self->get_x(),
+            $self->get_y(),
+            $self->get_x() + $self->get_width(),
+            $self->get_y() + $self->get_height());
+
+    foreach my $child in ($self->get_children()) {
+        $child->paint(); # this will result in the PICK method of
+                         # the child being called
+    }
+
+    glPopMatrix();
+  }
+
 =back
 
 =cut
@@ -302,18 +545,28 @@ See C<SHOW_ALL> above.
 =for signature $actor->realized ($boolean)
 =for signature boolean = $actor->realized
 =for arg ... (__hide__)
+Checks if the actor is realized
 =cut
 
 =for apidoc Clutter::Actor::mapped
 =for signature $actor->mapped ($boolean)
 =for signature boolean = $actor->mapped
 =for arg ... (__hide__)
+Checks if the actor is mapped
 =cut
 
 =for apidoc Clutter::Actor::visible
 =for signature $actor->visible ($boolean)
-=for signatur boolean = $actor->visible
+=for signaturs boolean = $actor->visible
 =for arg ... (__hide__)
+Checks if the actor is both realized and mapped
+=cut
+
+=for apidoc Clutter::Actor::reactive
+=for signature $actor->reactive ($boolean)
+=for signaturs boolean = $actor->reactive
+=for arg ... (__hide__)
+Checks if the actor is reactive to events
 =cut
 
 gboolean
@@ -323,6 +576,7 @@ realized (actor, ...)
         Clutter::Actor::realized = 0
         Clutter::Actor::mapped   = 1
 	Clutter::Actor::visible  = 2
+        Clutter::Actor::reactive = 3
     PREINIT:
         gboolean value = FALSE;
 	ClutterActorFlags flag = 0;
@@ -340,6 +594,7 @@ realized (actor, ...)
 			case 0: RETVAL = CLUTTER_ACTOR_IS_REALIZED (actor); break;
 			case 1: RETVAL = CLUTTER_ACTOR_IS_MAPPED   (actor); break;
 			case 2: RETVAL = CLUTTER_ACTOR_IS_VISIBLE  (actor); break;
+			case 3: RETVAL = CLUTTER_ACTOR_IS_REACTIVE (actor); break;
 			default:
 				RETVAL = FALSE;
 				g_assert_not_reached ();
@@ -351,6 +606,7 @@ realized (actor, ...)
 			case 0: flag = CLUTTER_ACTOR_REALIZED; break;
 			case 1: flag = CLUTTER_ACTOR_MAPPED;   break;
 			case 2: croak ("actor flag visible is read only"); break;
+			case 3: flag = CLUTTER_ACTOR_REACTIVE; break;
 			default:
 				flag = FALSE;
 				g_assert_not_reached ();
@@ -366,6 +622,9 @@ realized (actor, ...)
     OUTPUT:
         RETVAL
 
+=for apidoc
+Retrieves the flags set on the actor
+=cut
 ClutterActorFlags
 flags (ClutterActor *actor)
     ALIAS:
@@ -376,11 +635,17 @@ flags (ClutterActor *actor)
     OUTPUT:
         RETVAL
 
+=for apidoc
+Sets the given flags on the actor
+=cut
 void
 set_flags (ClutterActor *actor, ClutterActorFlags flags)
     CODE:
         CLUTTER_ACTOR_SET_FLAGS (actor, flags);
 
+=for apidoc
+Unsets the given flags on the actor
+=cut
 void
 unset_flags (ClutterActor *actor, ClutterActorFlags flags)
     CODE:
@@ -404,23 +669,31 @@ show (ClutterActor *actor)
         Clutter::Actor::hide_all     = 9
     CODE:
         switch (ix) {
-		case 0: clutter_actor_show         (actor); break;
-		case 1: clutter_actor_hide         (actor); break;
-		case 2: clutter_actor_realize      (actor); break;
-		case 3: clutter_actor_unrealize    (actor); break;
-		case 4: clutter_actor_paint        (actor); break;
-		case 5: clutter_actor_queue_redraw (actor); break;
-	        case 6: clutter_actor_destroy      (actor); break;
-		case 7: clutter_actor_unparent     (actor); break;
-		case 8: clutter_actor_show_all     (actor); break;
-		case 9: clutter_actor_hide_all     (actor); break;
+		case  0: clutter_actor_show         (actor); break;
+		case  1: clutter_actor_hide         (actor); break;
+		case  2: clutter_actor_realize      (actor); break;
+		case  3: clutter_actor_unrealize    (actor); break;
+		case  4: clutter_actor_paint        (actor); break;
+		case  5: clutter_actor_queue_redraw (actor); break;
+	        case  6: clutter_actor_destroy      (actor); break;
+		case  7: clutter_actor_unparent     (actor); break;
+		case  8: clutter_actor_show_all     (actor); break;
+		case  9: clutter_actor_hide_all     (actor); break;
 		default:
 			g_assert_not_reached ();
 	}
 
+=for apidoc
+Sets the untransformed bounding box of the actor
+
+B<Note>: The actor might not comply with the request
+=cut
 void
 clutter_actor_request_coords (ClutterActor *actor, ClutterActorBox *box)
 
+=for apidoc
+Requests the untrasformend bounding box of the actor
+=cut
 ClutterActorBox_copy *
 clutter_actor_query_coords (ClutterActor *actor)
     PREINIT:
@@ -431,9 +704,15 @@ clutter_actor_query_coords (ClutterActor *actor)
     OUTPUT:
         RETVAL
 
+=for apidoc
+A simple, pixel-based wrapper around request_coords()
+=cut
 void
 clutter_actor_set_geometry (ClutterActor *actor, ClutterGeometry *geom)
 
+=for apidoc
+A simple, pixel-based wrapped around query_coords()
+=cut
 ClutterGeometry_copy *
 clutter_actor_get_geometry (ClutterActor *actor)
     PREINIT:
@@ -463,11 +742,22 @@ clutter_actor_get_coords (ClutterActor *actor)
 void
 clutter_actor_set_position (ClutterActor *actor, gint x, gint y)
 
+=for apidoc
+=for signatur (x, y) = $actor->get_position
+=cut
 void
-clutter_actor_set_size (ClutterActor *actor, gint width, gint height)
+clutter_actor_get_position (ClutterActor *actor)
+    PREINIT:
+        gint x, y;
+    PPCODE:
+        clutter_actor_get_position (actor, &x, &y);
+        EXTEND (SP, 2);
+        PUSHs (sv_2mortal (newSViv (x)));
+        PUSHs (sv_2mortal (newSViv (y)));
 
 =for apidoc
 =for signature (x, y) = $actor->get_abs_position
+Gets the absolute position of an actor in pixels relative to the stage
 =cut
 void
 clutter_actor_get_abs_position (ClutterActor *actor)
@@ -478,6 +768,36 @@ clutter_actor_get_abs_position (ClutterActor *actor)
 	EXTEND (SP, 2);
 	PUSHs (sv_2mortal (newSViv (x)));
 	PUSHs (sv_2mortal (newSViv (y)));
+
+void
+clutter_actor_set_size (ClutterActor *actor, gint width, gint height)
+
+=for apidoc
+=for signature (width, height) = $actor->get_size
+=cut
+void
+clutter_actor_get_size (ClutterActor *actor)
+    PREINIT:
+        guint width, height;
+    PPCODE:
+        clutter_actor_get_size (actor, &width, &height);
+        EXTEND (SP, 2);
+        PUSHs (sv_2mortal (newSVuv (width)));
+        PUSHs (sv_2mortal (newSVuv (height)));
+
+=for apidoc
+=for signature (width, height) = $actor->get_abs_size
+Gets the absolute size of an actor taking into account any scaling factors
+=cut
+void
+clutter_actor_get_abs_size (ClutterActor *actor)
+    PREINIT:
+        guint width, height;
+    PPCODE:
+        clutter_actor_get_abs_size (actor, &width, &height);
+        EXTEND (SP, 2);
+        PUSHs (sv_2mortal (newSVuv (width)));
+        PUSHs (sv_2mortal (newSVuv (height)));
 
 void
 clutter_actor_set_width (ClutterActor *actor, guint width)
@@ -491,38 +811,67 @@ clutter_actor_set_height (ClutterActor *actor, guint height)
 guint
 clutter_actor_get_height (ClutterActor *actor)
 
+void
+clutter_actor_set_x (ClutterActor *actor, gint x)
+
 gint
 clutter_actor_get_x (ClutterActor *actor)
+
+void
+clutter_actor_set_y (ClutterActor *actor, gint y)
 
 gint
 clutter_actor_get_y (ClutterActor *actor)
 
-void
-clutter_actor_rotate_z (ClutterActor *actor, gfloat angle, gint x, gint y)
+=for apidoc
+Sets the rotation angle of I<actor> around the given I<axis>.
 
-void
-clutter_actor_rotate_x (ClutterActor *actor, gfloat angle, gint y, gint z)
+The rotation center coordinates depend on the value of I<axis>:
 
-void
-clutter_actor_rotate_y (ClutterActor *actor, gfloat angle, gint x, gint z)
+=over
 
-gdouble
-clutter_actor_get_rxang (ClutterActor *actor)
-    ALIAS:
-        Clutter::Actor::get_ryang = 1
-        Clutter::Actor::get_rzang = 2
-    CODE:
-        switch (ix) {
-                case 0: RETVAL = clutter_actor_get_rxang (actor); break;
-                case 1: RETVAL = clutter_actor_get_ryang (actor); break;
-                case 2: RETVAL = clutter_actor_get_rzang (actor); break;
-                default:
-                        g_assert_not_reached ();
-                        RETVAL = 0.0;
+=item 'x-axis' requires I<y> and I<z>
+
+=item 'y-axis' requires I<x> and I<z>
+
+=item 'z-axis' requires I<x> and I<y>
+
+=back
+
+=cut
+void
+clutter_actor_set_rotation (actor, axis, angle, x, y, z)
+        ClutterActor *actor
+        ClutterRotateAxis axis
+        gdouble angle
+        gint x
+        gint y
+        gint z
+
+=for apidoc
+=for signature angle = $actor->get_rotation ($axis)
+=for signature (angle, x, y, z) = $actor->get_rotation ($axis)
+Retrieves the angle and center of rotation on the given axis.
+=cut
+void
+clutter_actor_get_rotation (ClutterActor *actor, ClutterRotateAxis axis)
+    PREINIT:
+        gdouble angle;
+        gint x, y, z;
+    PPCODE:
+        angle = clutter_actor_get_rotation (actor, axis, &x, &y, &z);
+        XPUSHs (sv_2mortal (newSVnv (angle)));
+        if (GIMME_V == G_ARRAY) {
+                EXTEND (SP, 3);
+                PUSHs (sv_2mortal (newSViv (x)));
+                PUSHs (sv_2mortal (newSViv (y)));
+                PUSHs (sv_2mortal (newSViv (z)));
         }
-    OUTPUT:
-        RETVAL
 
+=for apidoc
+Sets the actor's opacity, with 0 being fully transparent and 255 being
+fully opaque
+=cut
 void
 clutter_actor_set_opacity (ClutterActor *actor, guint8 opacity)
 
@@ -536,7 +885,7 @@ const gchar *
 clutter_actor_get_name (ClutterActor *actor)
 
 guint32
-clutter_actor_get_id (ClutterActor *actor)
+clutter_actor_get_gid (ClutterActor *actor)
 
 void
 clutter_actor_set_clip (ClutterActor *actor, gint xoff, gint yoff, gint width, gint height)
@@ -546,6 +895,21 @@ clutter_actor_remove_clip (ClutterActor *actor)
 
 gboolean
 clutter_actor_has_clip (ClutterActor *actor)
+
+=for apidoc
+=for signature (xoff, yoff, width, height) = $actor->get_clip
+=cut
+void
+clutter_actor_get_clip (ClutterActor *actor)
+    PREINIT:
+        gint xoff, yoff, width, height;
+    PPCODE:
+        clutter_actor_get_clip (actor, &xoff, &yoff, &width, &height);
+        EXTEND (SP, 4);
+        PUSHs (sv_2mortal (newSViv (xoff)));
+        PUSHs (sv_2mortal (newSViv (yoff)));
+        PUSHs (sv_2mortal (newSViv (width)));
+        PUSHs (sv_2mortal (newSViv (height)));
 
 void
 clutter_actor_set_parent (ClutterActor *actor, ClutterActor *parent)
@@ -590,31 +954,11 @@ clutter_actor_get_scale (ClutterActor *actor)
         PUSHs (sv_2mortal (newSVnv (scale_x)));
         PUSHs (sv_2mortal (newSVnv (scale_y)));
 
-=for apidoc
-=for signature (width, height) = $actor->get_abs_size
-=cut
-void
-clutter_actor_get_abs_size (ClutterActor *actor)
-    PREINIT:
-        guint width, height;
-    PPCODE:
-        clutter_actor_get_abs_size (actor, &width, &height);
-        EXTEND (SP, 2);
-        PUSHs (sv_2mortal (newSVuv (width)));
-        PUSHs (sv_2mortal (newSVuv (height)));
+gboolean
+clutter_actor_is_scaled (ClutterActor *actor)
 
-=for apidoc
-=for signature (width, height) = $actor->get_size
-=cut
-void
-clutter_actor_get_size (ClutterActor *actor)
-    PREINIT:
-        guint width, height;
-    PPCODE:
-        clutter_actor_get_size (actor, &width, &height);
-        EXTEND (SP, 2);
-        PUSHs (sv_2mortal (newSVuv (width)));
-        PUSHs (sv_2mortal (newSVuv (height)));
+gboolean
+clutter_actor_is_rotated (ClutterActor *actor)
 
 void
 clutter_actor_move_by (ClutterActor *actor, gint dx, gint dy)
@@ -622,17 +966,19 @@ clutter_actor_move_by (ClutterActor *actor, gint dx, gint dy)
 void
 clutter_actor_pick (ClutterActor *actor, ClutterColor *color)
 
+=for apidoc
+Sets whether the actor should react to events
+=cut
 void
-clutter_actor_set_scale_with_gravity (actor, scale_x, scale_y, gravity)
-        ClutterActor *actor
-        gdouble scale_x
-        gdouble scale_y
-        ClutterGravity gravity
+clutter_actor_set_reactive (ClutterActor *actor, gboolean reactive)
+
+gboolean
+clutter_actor_get_reactive (ClutterActor *actor)
 
 =for apidoc
 =for signature vertices = $actor->get_vertices
-Returns an array of four Clutter::Vertex objects containing to the
-vertices of $actor
+Returns an array of four Clutter::Vertex objects containing the
+transformed coordinates of the vertices of I<actor>
 =cut
 void
 clutter_actor_get_vertices (ClutterActor *actor)
@@ -640,6 +986,24 @@ clutter_actor_get_vertices (ClutterActor *actor)
         ClutterVertex vertices[4];
     PPCODE:
         clutter_actor_get_vertices (actor, vertices);
+        EXTEND (SP, 4);
+        PUSHs (sv_2mortal (newSVClutterVertex (&vertices[0])));
+        PUSHs (sv_2mortal (newSVClutterVertex (&vertices[1])));
+        PUSHs (sv_2mortal (newSVClutterVertex (&vertices[2])));
+        PUSHs (sv_2mortal (newSVClutterVertex (&vertices[3])));
+
+=for apidoc
+=for signature vertices = $actor->get_relative_vertices ($ancestor)
+Returns an array of four Clutter::Vertex objects containing the
+transformed coordinates of the vertices of I<actor> in the I<ancestor>
+plane
+=cut
+void
+clutter_actor_get_relative_vertices (ClutterActor *actor, ClutterActor_ornull *ancestor)
+    PREINIT:
+        ClutterVertex vertices[4];
+    PPCODE:
+        clutter_actor_get_relative_vertices (actor, ancestor, vertices);
         EXTEND (SP, 4);
         PUSHs (sv_2mortal (newSVClutterVertex (&vertices[0])));
         PUSHs (sv_2mortal (newSVClutterVertex (&vertices[1])));
@@ -655,6 +1019,75 @@ clutter_actor_apply_transform_to_point (ClutterActor *actor, ClutterVertex *vert
         RETVAL = &transformed;
     OUTPUT:
         RETVAL
+
+ClutterVertex_copy *
+clutter_actor_apply_relative_transform_to_point (ClutterActor *actor, ClutterActor_ornull *ancestor, ClutterVertex *vertex)
+    PREINIT:
+        ClutterVertex transformed = { 0, };
+    CODE:
+        clutter_actor_apply_relative_transform_to_point (actor, ancestor, vertex, &transformed);
+        RETVAL = &transformed;
+    OUTPUT:
+        RETVAL
+
+gboolean
+clutter_actor_should_pick_paint (ClutterActor *actor)
+
+gboolean
+clutter_actor_set_shader (ClutterActor *actor, ClutterShader_ornull *shader)
+
+ClutterShader_ornull *
+clutter_actor_get_shader (ClutterActor *actor)
+
+void
+clutter_actor_set_shader_param (actor, param, value)
+      ClutterActor *actor
+      const gchar *param
+      gfloat value
+
+=for apidoc
+Sets the I<anchor point> of the I<actor>. The anchor is a point in the
+coordinates space of the actor (with origin set at the top left corner
+of the bounding box). The anchor point is taken into account when applying
+any transformation to an actor.
+=cut
+void
+clutter_actor_set_anchor_point (ClutterActor *actor, gint x, gint y)
+
+=for apidoc
+=for signature (x, y) = $actor->get_anchor_point
+=cut
+void
+clutter_actor_get_anchor_point (ClutterActor *actor)
+    PREINIT:
+        gint x, y;
+    PPCODE:
+        clutter_actor_get_anchor_point (actor, &x, &y);
+        EXTEND (SP, 2);
+        PUSHs (sv_2mortal (newSViv (x)));
+        PUSHs (sv_2mortal (newSViv (y)));
+
+void
+clutter_actor_set_anchor_point_from_gravity (actor, gravity)
+        ClutterActor *actor
+        ClutterGravity gravity
+
+=for apidoc
+=for signature (actor_x, actor_y) = $actor->transform_stage_point ($x, $y)
+=cut
+void
+clutter_actor_transform_stage_point (actor, x, y)
+        ClutterActor *actor
+        gint32 x
+        gint32 y
+    PREINIT:
+        ClutterUnit out_x, out_y;
+    PPCODE:
+        if (clutter_actor_transform_stage_point (actor, x, y, &out_x, &out_y)) {
+                EXTEND (SP, 2);
+                PUSHs (sv_2mortal (newSViv (out_x)));
+                PUSHs (sv_2mortal (newSViv (out_y)));
+        }
 
 =for apidoc Clutter::Actor::_INSTALL_OVERRIDES __hide__
 =cut
@@ -692,10 +1125,19 @@ _INSTALL_OVERRIDES (const char *package)
 =for apidoc Clutter::Actor::PAINT __hide__
 =cut
 
+=for apidoc Clutter::Actor::PICK __hide__
+=cut
+
 =for apidoc Clutter::Actor::REQUEST_COORDS __hide__
 =cut
 
-=for apidoc Clutter::Actor::ALLOCATE_COORDS __hide__
+=for apidoc Clutter::Actor::QUERY_COORDS __hide__
+=cut
+
+=for apidoc Clutter::Actor::REALIZE __hide__
+=cut
+
+=for apidoc Clutter::Actor::UNREALIZE __hide__
 =cut
 
 void
@@ -791,12 +1233,11 @@ REQUEST_COORDS (ClutterActor *actor, ClutterActorBox *box)
         }
 
 void
-QUERY_COORDS (ClutterActor *actor)
+QUERY_COORDS (ClutterActor *actor, ClutterActorBox *box)
     PREINIT:
         ClutterActorClass *klass;
         GType thisclass, parent_class;
         SV *saveddefsv;
-        ClutterActorBox box = { 0, };
     PPCODE:
         saveddefsv = newSVsv (DEFSV);
         eval_pv ("$_ = caller;", 0);
@@ -811,10 +1252,84 @@ QUERY_COORDS (ClutterActor *actor)
         }
         klass = g_type_class_peek (parent_class);
         if (klass->query_coords) {
-                klass->query_coords (actor, &box);
+                klass->query_coords (actor, box);
         }
         /* allow doing:
          *   return $self->SUPER::QUERY_COORDS();
          * in Perl subclasses
          */
-        XPUSHs (sv_2mortal (newSVClutterActorBox (&box)));
+        EXTEND (SP, 4);
+        PUSHs (sv_2mortal (newSViv (box->x1)));
+        PUSHs (sv_2mortal (newSViv (box->y1)));
+        PUSHs (sv_2mortal (newSViv (box->x2)));
+        PUSHs (sv_2mortal (newSViv (box->y2)));
+
+void
+REALIZE (ClutterActor *actor)
+    PREINIT:
+        ClutterActorClass *klass;
+        GType thisclass, parent_class;
+        SV *saveddefsv;
+    CODE:
+        saveddefsv = newSVsv (DEFSV);
+        eval_pv ("$_ = caller;", 0);
+        thisclass = gperl_type_from_package (SvPV_nolen (DEFSV));
+        SvSetSV (DEFSV, saveddefsv);
+        if (!thisclass)
+                thisclass = G_OBJECT_TYPE (actor);
+        parent_class = g_type_parent (thisclass);
+        if (!g_type_is_a (parent_class, CLUTTER_TYPE_ACTOR)) {
+                croak ("parent of %s is not a Clutter::Actor",
+                       g_type_name (thisclass));
+        }
+        klass = g_type_class_peek (parent_class);
+        if (klass->realize) {
+                klass->realize (actor);
+        }
+
+void
+UNREALIZE (ClutterActor *actor)
+    PREINIT:
+        ClutterActorClass *klass;
+        GType thisclass, parent_class;
+        SV *saveddefsv;
+    CODE:
+        saveddefsv = newSVsv (DEFSV);
+        eval_pv ("$_ = caller;", 0);
+        thisclass = gperl_type_from_package (SvPV_nolen (DEFSV));
+        SvSetSV (DEFSV, saveddefsv);
+        if (!thisclass)
+                thisclass = G_OBJECT_TYPE (actor);
+        parent_class = g_type_parent (thisclass);
+        if (!g_type_is_a (parent_class, CLUTTER_TYPE_ACTOR)) {
+                croak ("parent of %s is not a Clutter::Actor",
+                       g_type_name (thisclass));
+        }
+        klass = g_type_class_peek (parent_class);
+        if (klass->unrealize) {
+                klass->unrealize (actor);
+        }
+
+void
+PICK (ClutterActor *actor, const ClutterColor *pick_color)
+    PREINIT:
+        ClutterActorClass *klass;
+        GType thisclass, parent_class;
+        SV *saveddefsv;
+    CODE:
+        saveddefsv = newSVsv (DEFSV);
+        eval_pv ("$_ = caller;", 0);
+        thisclass = gperl_type_from_package (SvPV_nolen (DEFSV));
+        SvSetSV (DEFSV, saveddefsv);
+        if (!thisclass)
+                thisclass = G_OBJECT_TYPE (actor);
+        parent_class = g_type_parent (thisclass);
+        if (!g_type_is_a (parent_class, CLUTTER_TYPE_ACTOR)) {
+                croak ("parent of %s is not a Clutter::Actor",
+                       g_type_name (thisclass));
+        }
+        klass = g_type_class_peek (parent_class);
+        if (klass->pick) {
+                klass->pick (actor, pick_color);
+        }
+

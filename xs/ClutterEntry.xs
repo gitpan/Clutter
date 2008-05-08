@@ -110,13 +110,13 @@ clutter_entry_set_alignment (ClutterEntry *entry, PangoAlignment alignment)
 PangoAlignment
 clutter_entry_get_alignment (ClutterEntry *entry)
 
-## yey collisions!
-##void
-##clutter_entry_set_position (ClutterEntry *entry, gint position)
-##gint
-##clutter_entry_get_position (ClutterEntry *entry)
-
 void
+clutter_entry_set_cursor_position (ClutterEntry *entry, gint position)
+
+gint
+clutter_entry_get_cursor_position (ClutterEntry *entry)
+
+gboolean
 clutter_entry_handle_key_event (ClutterEntry *entry, ClutterEvent *event)
     CODE:
         if (event->type != CLUTTER_KEY_PRESS ||

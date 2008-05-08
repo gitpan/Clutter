@@ -13,4 +13,3 @@ is($timeline->is_playing(), FALSE, 'we are not playing');
 
 $timeline->set_delay(100);
 is($timeline->get_delay(), 100, 'delay');
-
