@@ -68,6 +68,22 @@ clutterperl_container_add (ClutterContainer *container,
     }
 }
 
+static void
+init_child_property_value (GObject     *object, 
+                           const gchar *name, 
+                           GValue      *value)
+{
+  GParamSpec * pspec;
+
+  pspec = clutter_container_class_find_child_property (G_OBJECT_GET_CLASS (object), name);
+  if (!pspec)
+    croak ("Child property %s not found in object class %s",
+           name,
+           G_OBJECT_TYPE_NAME (object));
+
+  g_value_init (value, G_PARAM_SPEC_VALUE_TYPE (pspec));
+}
+
 typedef struct {
   ClutterCallback func;
   gpointer data;
@@ -189,6 +205,96 @@ clutterperl_container_lower (ClutterContainer *container,
 }
 
 static void
+clutterperl_container_sort_depth_order (ClutterContainer *container)
+{
+  GET_METHOD (container, "SORT_DEPTH_ORDER");
+
+  if (METHOD_EXISTS)
+    {
+      PREP (container);
+
+      CALL;
+
+      FINISH;
+    }
+}
+
+static void
+clutterperl_container_create_child_meta (ClutterContainer *container,
+                                         ClutterActor     *child)
+{
+  GET_METHOD (container, "CREATE_CHILD_META");
+
+  if (METHOD_EXISTS)
+    {
+      PREP (container);
+
+      XPUSHs (sv_2mortal (newSVClutterActor (child)));
+
+      CALL;
+
+      FINISH;
+    }
+}
+
+static void
+clutterperl_container_destroy_child_meta (ClutterContainer *container,
+                                          ClutterActor     *child)
+{
+  GET_METHOD (container, "DESTROY_CHILD_META");
+
+  if (METHOD_EXISTS)
+    {
+      PREP (container);
+
+      XPUSHs (sv_2mortal (newSVClutterActor (child)));
+
+      CALL;
+
+      FINISH;
+    }
+}
+
+static ClutterChildMeta *
+clutterperl_container_get_child_meta (ClutterContainer *container,
+                                      ClutterActor     *child)
+{
+  GET_METHOD (container, "GET_CHILD_META");
+
+  if (METHOD_EXISTS)
+    {
+      ClutterChildMeta *meta;
+      int count;
+
+      PREP (container);
+
+      XPUSHs (sv_2mortal (newSVClutterActor (child)));
+
+      PUTBACK;
+      count = call_sv ((SV *) GvCV (slot), G_SCALAR);
+      SPAGAIN;
+
+      if (count == 1)
+        {
+          meta = SvClutterChildMeta (POPs);
+
+          if (!g_type_is_a (G_OBJECT_TYPE (meta), CLUTTER_TYPE_CHILD_META))
+            croak ("Object of type `%s' is not a Clutter::ChildMeta",
+                   G_OBJECT_TYPE_NAME (meta));
+        }
+      else
+        croak ("GET_CHILD_META must return a subclass of "
+               "Clutter::ChildMeta");
+
+      FINISH;
+
+      return meta;
+    }
+
+  return NULL;
+}
+
+static void
 clutterperl_container_init (ClutterContainerIface *iface)
 {
   iface->add = clutterperl_container_add;
@@ -196,6 +302,10 @@ clutterperl_container_init (ClutterContainerIface *iface)
   iface->foreach = clutterperl_container_foreach;
   iface->raise = clutterperl_container_raise;
   iface->lower = clutterperl_container_lower;
+  iface->sort_depth_order = clutterperl_container_sort_depth_order;
+  iface->create_child_meta = clutterperl_container_create_child_meta;
+  iface->destroy_child_meta = clutterperl_container_destroy_child_meta;
+  iface->get_child_meta = clutterperl_container_get_child_meta;
 }
 
 static void
@@ -214,11 +324,67 @@ MODULE = Clutter::Container     PACKAGE = Clutter::Container	PREFIX = clutter_co
 
 =head1 DESCRIPTION
 
-FIXME
+B<Clutter::Container> is an interface for L<Clutter::Actor>s that provides a
+common API for adding, removing and iterating over children.
+
+By implementing the Clutter::Container interface with the usual L<Glib::Object>
+subclassing methods it is possible to use the Clutter::Container API for
+managing children.
 
 =cut
 
 =for position post_methods
+
+=head1 CHILD PROPERTIES
+
+Clutter::Container allows the management of properties that exist only when
+an actor is contained inside a container.
+
+For instance, it is possible to add a property like I<padding> to a child
+actor when inside a container; such property might only be useful when adding
+any actor to a specific container implementation, and might be desirable
+not to have it inside the actor class itself.
+
+In order to create child properties for a container it is needed to subclass
+the L<Clutter::ChildMeta> object class using the usual L<Glib::Object>
+mechanisms, like:
+
+  package My::ChildMeta;
+
+  use Glib::Object::Subclass
+      'Clutter::ChildMeta',
+      properties => [
+        ...
+      ];
+
+The L<Clutter::ChildMeta> class is the class that stores and handles the
+child properties. A ChildMeta instance also stores references to the
+container that handles it, and to the actor it is wrapping.
+
+The container implementation should set the package name of the ChildMeta
+subclass it will use; the most convenient place is inside the INIT_INSTANCE
+sub:
+
+  sub INIT_INSTANCE {
+    my ($self) = @_;
+
+    # instance set up
+
+    $self->set_child_meta_type('My::ChildMeta');
+  }
+
+This is enough for start using the Clutter::Container::child_set() and
+Clutter::Container::child_get() methods to store and retrieve values for
+the properties specified inside the ChildMeta subclass, like:
+
+  $container->child_set($child, 'padding', [ 0, 10, 0, 10 ]);
+
+When the child is removed from the container, the ChildMeta instance
+bound to it will simply disappear.
+
+It is also possible to exercise a higher degree of control on the creation
+and destruction of the ChildMeta instances by using the CREATE_CHILD_META,
+GET_CHILD_META and DESTROY_CHILD_META functions.
 
 =head1 CREATING A CUSTOM CONTAINER ACTOR
 
@@ -235,11 +401,21 @@ following methods is required:
 
 =over
 
-=item ADD ($container, $actor)
+=item B<< ADD ($container, $actor) >>
+
+=over
+
+=item o $container (Clutter::Container)
+
+=item o $actor (Clutter::Actor)
+
+=back
 
 Called to add I<actor> to I<container>. The implementation should emit
 the B<::actor-added> signal once the actor has been added.
 
+=item B<< REMOVE ($container, $actor) >>
+
 =over
 
 =item o $container (Clutter::Container)
@@ -247,25 +423,27 @@ the B<::actor-added> signal once the actor has been added.
 =item o $actor (Clutter::Actor)
 
 =back
-
-=item REMOVE ($container, $actor)
 
 Called to remove I<actor> from I<container>. The implementation should emit
 the B<::actor-removed> signal once the actor has been removed.
 
+=item B<< RAISE ($container, $child, $sibling) >>
+
 =over
 
 =item o $container (Clutter::Container)
 
-=item o $actor (Clutter::Actor)
+=item o $child (Clutter::Actor)
+
+=item o $sibling (Clutter::Actor)
 
 =back
-
-=item RAISE ($container, $child, $sibling)
 
 Called when raising I<child> above I<sibling>. If I<sibling> is undefined,
 then I<child> should be raised above every other child of I<container>.
 
+=item B<< LOWER ($container, $child, $sibling) >>
+
 =over
 
 =item o $container (Clutter::Container)
@@ -275,33 +453,21 @@ then I<child> should be raised above every other child of I<container>.
 =item o $sibling (Clutter::Actor)
 
 =back
-
-=item LOWER ($container, $child, $sibling)
 
 Called when lowering I<child> below I<sibling>. If I<sibling> is undefined,
 then I<child> should be lowered below every other child of I<container>.
 
+=item B<< SORT_DEPTH_ORDER ($container) >>
+
 =over
 
 =item o $container (Clutter::Container)
 
-=item o $child (Clutter::Actor)
-
-=item o $sibling (Clutter::Actor)
+Called when resorting the list of children depending on their depth.
 
 =back
 
-=item FOREACH ($container, $function, $data)
-
-Called when iterating over every child of I<container>. For each child
-the I<function> must be called with the actor and the passed I<data>, for
-instance:
-
-  foreach my $child ($container->{children}) {
-    $function ($child, $data);
-  }
-
-This function will also be called by the B<get_children> method.
+=item B<< FOREACH ($container, $function, $data) >>
 
 =over
 
@@ -312,6 +478,59 @@ This function will also be called by the B<get_children> method.
 =item o $data (scalar) data to pass to the function
 
 =back
+
+Called when iterating over every child of I<container>. For each child
+the I<function> must be called with the actor and the passed I<data>, for
+instance:
+
+  foreach my $child (@{$container->{children}}) {
+    &$function ($child, $data);
+  }
+
+This function will also be called by the B<get_children> method.
+
+=item B<< CREATE_CHILD_META ($container, $actor) >>
+
+=over
+
+=item o $container (Clutter::Container)
+
+=item o $actor (Clutter::Actor)
+
+=back
+
+Called when creating a new L<Clutter::ChildMeta> instance wrapping I<actor>
+inside I<container>. This function should be overridden only if the
+metadata class used to implement child properties needs special code
+or needs to be stored inside a different data structure within I<container>.
+
+This function is called before Clutter::Container::ADD_ACTOR.
+
+=item B<< DESTROY_CHILD_META ($container, $actor) >>
+
+=over
+
+=item o $container (Clutter::Container)
+
+=item o $actor (Clutter::Actor)
+
+=back
+
+Called when destroying a L<Clutter::ChildMeta> instance for I<actor>.
+
+This function is called before Clutter::Actor::REMOVE_ACTOR
+
+=item B<< childmeta = GET_CHILD_META ($container, $actor) >>
+
+=over
+
+=item o $container (Clutter::Container)
+
+=item o $actor (Clutter::Actor)
+
+=back
+
+Called when retrieving a L<Clutter::ChildMeta> instance for I<actor>.
 
 =back
 
@@ -332,6 +551,11 @@ _ADD_INTERFACE (class, const char *target_class)
         g_type_add_interface_static (gtype, CLUTTER_TYPE_CONTAINER, &iface_info);
     }
 
+=for apidoc
+=for arg actor __hide__
+=for arg ... list of actors
+Adds a list of actors to I<container>
+=cut
 void
 clutter_container_add (ClutterContainer *container, ClutterActor *actor, ...)
     PREINIT:
@@ -341,6 +565,11 @@ clutter_container_add (ClutterContainer *container, ClutterActor *actor, ...)
 	for (i = 2; i < items; i++)
 	  clutter_container_add_actor (container, SvClutterActor (ST (i)));
 
+=for apidoc
+=for arg actor __hide__
+=for arg ... list of actors
+Removes a list of actors from I<container>
+=cut
 void
 clutter_container_remove (ClutterContainer *container, ClutterActor *actor, ...)
     PREINIT:
@@ -359,15 +588,13 @@ clutter_container_get_children (ClutterContainer *container)
         GList *children = NULL, *l;
     PPCODE:
         children = clutter_container_get_children (container);
-        if (children)
-          {
-            EXTEND (SP, (int) g_list_length (children));
-            for (l = children; l != NULL; l = l->next)
-              {
-                PUSHs (sv_2mortal (newSVClutterActor_noinc (l->data)));
-              }
-            g_list_free (children);
-          }
+        if (children) {
+                EXTEND (SP, (int) g_list_length (children));
+                for (l = children; l != NULL; l = l->next) {
+                        PUSHs (sv_2mortal (newSVClutterActor_noinc (l->data)));
+                }
+                g_list_free (children);
+        }
 
 void
 clutter_container_foreach (container, callback, callback_data=NULL)
@@ -403,6 +630,115 @@ clutter_container_lower_child (container, actor, sibling)
         ClutterContainer *container
         ClutterActor *actor
         ClutterActor *sibling
+
+=for apidoc
+=for arg ... list of property names
+Returns a list of values of properties of the child
+=cut
+void
+clutter_container_child_get (ClutterContainer *container, ClutterActor *child, ...)
+    ALIAS:
+        Clutter::Container::child_get_property = 1
+    PREINIT:
+        GValue value = { 0, };
+        gint i;
+    PPCODE:
+        PERL_UNUSED_VAR (ix);
+        EXTEND (SP, items - 1);
+        for (i = 2; i < items; i++) {
+                char *name = SvPV_nolen (ST (i));
+                init_child_property_value (G_OBJECT (container), name, &value);
+                clutter_container_child_get_property (container,
+                                                      child,
+                                                      name,
+                                                      &value);
+                PUSHs (sv_2mortal (gperl_sv_from_value (&value)));
+                g_value_unset (&value);
+        }
+
+=for apidoc
+=for arg ... list of property names
+Sets a list of properties of the child
+=cut
+void
+clutter_container_child_set (ClutterContainer *container, ClutterActor *child, ...)
+    ALIAS:
+        Clutter::Container::child_set_property = 1
+    PREINIT:
+        GValue value = { 0, };
+        gint i;
+    CODE:
+        PERL_UNUSED_VAR (ix);
+        if (0 != ((items - 2) % 2))
+          croak ("set method expects name => value pairs "
+                 "(odd number of arguments detected)");
+        for (i = 2; i < items; i += 2) {
+                char *name = SvPV_nolen (ST (i));
+                SV *newval = ST (i + 1);
+                init_child_property_value (G_OBJECT (container), name, &value);
+                gperl_value_from_sv (&value, newval);
+                clutter_container_child_set_property (container,
+                                                      child,
+                                                      name,
+                                                      &value);
+                g_value_unset (&value);
+        }
+
+=for apidoc
+Retrieves the ChildMeta type used by I<container>
+=cut
+const gchar *
+clutter_container_get_child_meta_type (ClutterContainer *container)
+    PREINIT:
+        GType gtype = G_TYPE_INVALID;
+    CODE:
+        gtype = CLUTTER_CONTAINER_GET_IFACE (container)->child_meta_type;
+        if (gtype == G_TYPE_INVALID)
+                XSRETURN_UNDEF;
+        RETVAL = NULL;
+        /* ClutterChildMeta are GObjects, so we should always get back
+         * a valid type; however, we might get back a type the bindings
+         * know nothing about, so we have to stop when we hit an
+         * unknown type. Glib::Object is always known, so this loop
+         * cannot go on forever
+         */
+        while (gtype &&
+               (NULL == (RETVAL = gperl_object_package_from_type (gtype))))
+                gtype = g_type_parent (gtype);
+    OUTPUT:
+        RETVAL
+
+=for apidoc
+Sets the ChildMeta type used by I<container>. This type can only be
+set once and only if the container implementation does not have any
+ChildMeta type set already. If you try to set the ChildMeta type on
+an instance with a type already set, this function will croak.
+=cut
+void
+clutter_container_set_child_meta_type (ClutterContainer *container, const gchar *type_name)
+    PREINIT:
+        GType gtype = G_TYPE_INVALID;
+    CODE:
+        gtype = CLUTTER_CONTAINER_GET_IFACE (container)->child_meta_type;
+        if (gtype != G_TYPE_INVALID)
+                croak ("Container implementation of type `%s' already has "
+                       "child meta type of `%s'. You should subclass `%s' "
+                       "in order to change it",
+                       G_OBJECT_TYPE_NAME (container),
+                       g_type_name (gtype),
+                       G_OBJECT_TYPE_NAME (container));
+        gtype = gperl_object_type_from_package (type_name);
+        if (gtype == G_TYPE_INVALID)
+                croak ("Invalid GType `%s'", type_name);
+        if (!g_type_is_a (gtype, CLUTTER_TYPE_CHILD_META))
+                croak ("GType `%s' is not a Clutter::ChildMeta", type_name);
+        CLUTTER_CONTAINER_GET_IFACE (container)->child_meta_type = gtype;
+
+=for apidoc
+Retrieves the L<Clutter::ChildMeta> instance for I<actor>
+=cut
+ClutterChildMeta *
+clutter_container_get_child_meta (ClutterContainer *container, ClutterActor *actor)
 
 MODULE = Clutter::Container     PACKAGE = Clutter::Container::ForeachFunc
 
