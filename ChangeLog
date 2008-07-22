@@ -1,3 +1,34 @@
+======== Clutter 0.801 =======================================================
+2008-07-22  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* xs/ClutterModel.xs:
+	* xs/ClutterModelIter.xs: Finish the wrappers for implementing
+	a ClutterModel and a ClutterModelIter in pure Perl; the
+	ClutterModel::resort implementation is still missing.
+
+2008-07-22  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	Miscellaneous fixes for the Debian packaging.
+
+	* xs/ClutterContainer.xs: Use the right parameter for the
+	FOREACH code reference generation.
+
+	* xs/ClutterEntry.xs: Remove the deprecated handle_key_event()
+	wrapper.
+
+	* xs/ClutterEvent.xs: Remove an unused function.
+
+	* xs/ClutterStageManager.xs: Include clutter-stage-manager.h,
+	since Clutter 0.8.0 shipped with this header missing from the
+	clutter.h collective header.
+
+2008-07-22  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* xs/ClutterGstAudio.xs: Bind the get_playbin() method.
+
+	* xs/ClutterGstVideoSink.xs:
+	* xs_files_gst: Add ClutterGstVideoSink bindings.
+
 ======== Clutter 0.800 =======================================================
 2008-07-21  Emmanuele Bassi  <ebassi@openedhand.com>
 
