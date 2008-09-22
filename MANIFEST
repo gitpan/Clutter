@@ -20,7 +20,6 @@ maps
 maps-cairo
 maps-gst
 maps-gtk
-META.yml
 NEWS
 README
 t/0.t
@@ -89,3 +88,4 @@ xs_files
 xs_files_cairo
 xs_files_gst
 xs_files_gtk
+META.yml                                 Module meta-data (added by MakeMaker)

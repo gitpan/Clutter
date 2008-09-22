@@ -1,4 +1,67 @@
 ======== Clutter 0.801 =======================================================
+2008-09-22  Emmanuele Bassi  <ebassi@linux.intel.com>
+
+	* Makefile.PL:
+	* Clutter.pm:
+	* README:
+	* NEWS: Release 0.802.
+
+2008-09-22  Emmanuele Bassi  <ebassi@linux.intel.com>
+
+	* xs/ClutterBehaviour.xs:
+	* xs/ClutterEffect.xs: Documentation fixes.
+
+2008-09-22  Emmanuele Bassi  <ebassi@linux.intel.com>
+
+	* examples/behaviour.pl: Use a built-in alpha function.
+
+	* t/ClutterAlpha.t: Test setting built-in alpha functions.
+
+	* xs/ClutterAlpha.xs: Fix the handling of alpha functions
+	using closures. Not sure why this has happened, but apparently
+	switching to gperl_closure_new() broke the assignment from
+	built-in alpha functions such as \&Clutter::Alpha::ramp_inc.
+	Thanks to Andrew Ruthven for spotting this.
+
+2008-08-07  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* xs/ClutterTimeline.xs: Provide a sensible default value
+	for the list_markers() method argument.
+
+	* t/ClutterTimeline.t: Enhance the Clutter::Timeline test
+	suite by exercising the markers API.
+
+2008-08-07  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* examples/behaviour.pl: Small fixes.
+
+	* xs/ClutterBackend.xs: Bind the font options accessors of
+	the Clutter::Backend class.
+
+	* xs/ClutterContainer.xs: Documentation fixes.
+
+2008-08-07  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* tools/mk-html-docs.sh: Add a simple script using
+	mpod2html to convert the pod files to HTML files. Still
+	not hooked up to anything, so it needs to be run
+	manually.
+
+2008-08-07  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* clutter.typemap:
+	* clutterperl.h:
+	* xs/ClutterCogl.xs: Start wrapping the COGL API for
+	textures. It is stil very experimental, and should only
+	be used for testing at this moment.
+
+2008-08-07  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* Makefile.PL: Update the WriteMakefile() parameters so that
+	the META.yml that MakeMaker generates is finally useful. Remove
+	the rpms magic from the postamble.
+
+======== Clutter 0.801 =======================================================
 2008-07-22  Emmanuele Bassi  <ebassi@openedhand.com>
 
 	* xs/ClutterModel.xs:

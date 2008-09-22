@@ -1,22 +1,23 @@
 --- #YAML:1.0
 name:                Clutter
-version:             0.801
+version:             0.802
 abstract:            Simple GL-based canvas library
-license:             lgpl, perl
-author:              Emmanuele Bassi <ebassi@openedhand.com>
+license:             perl, lgpl
+author:              
+    - Emmanuele Bassi <ebassi@linux.intel.com>
+generated_by:        ExtUtils::MakeMaker version 6.44
 distribution_type:   module
 requires:     
-    ExtUtils::MakeMaker: 0
-    ExtUtils::Depend: 0.2
-    ExtUtils::PkgConfig: 1.03
-    Glib: 1.180
-    Cairo: 1.0
-    Gtk2: 1.140
-recommends:
-    GStreamer: 1.0
-build_requires:
-    Cwd: 0
-    File::Spec: 0
+    Cairo:                         1.00
+    Glib:                          1.180
+    GStreamer:                     0
+    Gtk2:                          1.140
 meta-spec:
     url:     http://module-build.sourceforge.net/META-spec-v1.3.html
     version: 1.3
+configure_requires:
+   Glib: 1.180
+   ExtUtils::Depends: 0.2
+   Gtk2: 1.140
+   Cairo: 1.00
+   ExtUtils::PkgConfig: 1.03
