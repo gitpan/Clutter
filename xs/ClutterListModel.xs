@@ -23,9 +23,33 @@
  * Boston, MA 02111-1307, USA.
  */
 
-#include "clutterperl.h"
+#include "clutter-perl-private.h"
 
 MODULE = Clutter::ListModel     PACKAGE = Clutter::ListModel    PREFIX = clutter_list_model_
+
+=for object Clutter::ListModel - List model implementation
+=cut
+
+=for position DESCRIPTION
+
+=head1 SYNOPSIS
+
+    my $model = Clutter::ListModel->new(
+        # column type    column title
+        'Glib::String',  'Full Name',
+        'Glib::String',  'Address',
+        'Glib::Uint',    'Age',
+        'Glib::Boolean', 'Subscribed',
+    );
+
+=head1 DESCRIPTION
+
+B<Clutter::ListModel> is a L<Clutter::Model> implementation provided by
+Clutter. Clutter::ListModel uses a bilanced binary tree internally for
+storing the values for each row, so it's optimized for insertion and look
+up operations.
+
+=cut
 
 =for apidoc
 =for signature model = Clutter::ListModel->new (type, name, ...)

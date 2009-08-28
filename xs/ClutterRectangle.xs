@@ -23,10 +23,12 @@
  * Boston, MA 02111-1307, USA.
  */
 
-#include "clutterperl.h"
+#include "clutter-perl-private.h"
 
 MODULE = Clutter::Rectangle	PACKAGE = Clutter::Rectangle	PREFIX = clutter_rectangle_
 
+=for object Clutter::Rectangle - A simple rectangular actor
+=cut
 
 ClutterActor_noinc *
 clutter_rectangle_new (class, color=NULL)

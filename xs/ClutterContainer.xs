@@ -23,7 +23,7 @@
  * Boston, MA 02111-1307, USA.
  */
 
-#include "clutterperl.h"
+#include "clutter-perl-private.h"
 
 /*
  * GInterface support
@@ -144,6 +144,30 @@ clutterperl_container_foreach (ClutterContainer *container,
                                gpointer          callback_data)
 {
   GET_METHOD (container, "FOREACH");
+
+  if (METHOD_EXISTS)
+    {
+      SV *code, *data;
+
+      PREP (container);
+
+      create_callback (callback, callback_data, &code, &data);
+
+      XPUSHs (sv_2mortal (newSVsv (code)));
+      XPUSHs (sv_2mortal (newSVsv (data)));
+
+      CALL;
+
+      FINISH;
+    }
+}
+
+static void
+clutterperl_container_foreach_with_internals (ClutterContainer *container,
+                                              ClutterCallback   callback,
+                                              gpointer          callback_data)
+{
+  GET_METHOD (container, "FOREACH_WITH_INTERNALS");
 
   if (METHOD_EXISTS)
     {
@@ -300,6 +324,7 @@ clutterperl_container_init (ClutterContainerIface *iface)
   iface->add = clutterperl_container_add;
   iface->remove = clutterperl_container_remove;
   iface->foreach = clutterperl_container_foreach;
+  iface->foreach_with_internals = clutterperl_container_foreach_with_internals;
   iface->raise = clutterperl_container_raise;
   iface->lower = clutterperl_container_lower;
   iface->sort_depth_order = clutterperl_container_sort_depth_order;
@@ -319,6 +344,9 @@ clutterperl_container_foreach_callback (ClutterActor *actor,
 
 
 MODULE = Clutter::Container     PACKAGE = Clutter::Container	PREFIX = clutter_container_
+
+=for object Clutter::Container - An interface for implementing container actors
+=cut
 
 =for position DESCRIPTION
 
@@ -478,6 +506,8 @@ Called when resorting the list of children depending on their depth.
 
 =item B<< FOREACH ($container, $function, $data) >>
 
+=item B<< FOREACH_WITH_INTERNALS ($container, $function, $data) >>
+
 =over
 
 =item o $container (Clutter::Container)
@@ -497,6 +527,15 @@ instance:
   }
 
 This function will also be called by the B<get_children> method.
+
+The difference between B<FOREACH> and B<FOREACH_WITH_INTERNALS> is that the
+latter should iterate over every child of the container, including the actors
+that are internal to it -- that is, the actors that have not been added using
+the Clutter::Container API but that are direct responsability of the container
+itself.
+
+If your container actor has no internal children, you can choose to implement
+only the B<FOREACH> method.
 
 =item B<< CREATE_CHILD_META ($container, $actor) >>
 
@@ -595,7 +634,7 @@ _ADD_INTERFACE (class, const char *target_class)
     }
 
 =for apidoc
-=for arg actor __hide__
+=for arg actor (__hide__)
 =for arg ... list of actors
 Adds a list of actors to I<container>
 =cut
@@ -609,7 +648,7 @@ clutter_container_add (ClutterContainer *container, ClutterActor *actor, ...)
 	  clutter_container_add_actor (container, SvClutterActor (ST (i)));
 
 =for apidoc
-=for arg actor __hide__
+=for arg actor (__hide__)
 =for arg ... list of actors
 Removes a list of actors from I<container>
 =cut

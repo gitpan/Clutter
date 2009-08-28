@@ -23,11 +23,11 @@
  * Boston, MA 02111-1307, USA.
  */
 
-#include "clutterperl.h"
+#include "clutter-perl-private.h"
 
 static void
 clutterperl_behaviour_alpha_notify (ClutterBehaviour *behaviour,
-                                    guint32           alpha_value)
+                                    gdouble           alpha_value)
 {
         HV *stash = gperl_object_stash_from_type (G_OBJECT_TYPE (behaviour));
         GV *slot = gv_fetchmethod (stash, "ALPHA_NOTIFY");
@@ -41,7 +41,7 @@ clutterperl_behaviour_alpha_notify (ClutterBehaviour *behaviour,
 
                 EXTEND (SP, 2);
                 PUSHs (newSVClutterBehaviour (behaviour));
-                PUSHs (sv_2mortal (newSVuv (alpha_value)));
+                PUSHs (sv_2mortal (newSVnv (alpha_value)));
 
                 PUTBACK;
                 call_sv ((SV *) GvCV (slot), G_VOID | G_DISCARD);
@@ -82,6 +82,9 @@ clutterperl_behaviour_foreach_func (ClutterBehaviour *behaviour,
 
 MODULE = Clutter::Behaviour     PACKAGE = Clutter::Behaviour    PREFIX = clutter_behaviour_
 
+=for object Clutter::Behaviour - Class for providing behaviours to actors
+=cut
+
 =for position DESCRIPTION
 
 =head1 DESCRIPTION
@@ -117,7 +120,7 @@ implementation of the following method:
 
 =item o $behaviour (Clutter::Behaviour)
 
-=item o $alpha_value (integer) The value computed by the alpha function
+=item o $alpha_value (float) The value computed by the alpha function
 
 =back
 
@@ -143,7 +146,7 @@ gboolean
 clutter_behaviour_is_applied (ClutterBehaviour *behaviour, ClutterActor *actor)
 
 void
-clutter_behaviour_actors_foreach (behaviour, func, data)
+clutter_behaviour_actors_foreach (behaviour, func, data=NULL)
         ClutterBehaviour *behaviour
         SV *func
         SV *data

@@ -23,7 +23,7 @@
  * Boston, MA 02111-1307, USA.
  */
 
-#include "clutterperl.h"
+#include "clutter-perl-private.h"
 
 const char *
 clutterperl_event_get_package (ClutterEvent *event)
@@ -32,21 +32,28 @@ clutterperl_event_get_package (ClutterEvent *event)
     {
     case CLUTTER_NOTHING:
       return "Clutter::Event";
+
     case CLUTTER_BUTTON_PRESS:
     case CLUTTER_BUTTON_RELEASE:
       return "Clutter::Event::Button";
+
     case CLUTTER_KEY_PRESS:
     case CLUTTER_KEY_RELEASE:
       return "Clutter::Event::Key";
+
     case CLUTTER_MOTION:
       return "Clutter::Event::Motion";
+
     case CLUTTER_SCROLL:
       return "Clutter::Event::Scroll";
+
     case CLUTTER_ENTER:
     case CLUTTER_LEAVE:
       return "Clutter::Event::Crossing";
+
     case CLUTTER_STAGE_STATE:
       return "Clutter::Event::StageState";
+
     default:
       {
         GEnumClass *class = g_type_class_ref (CLUTTER_TYPE_EVENT_TYPE);
@@ -76,70 +83,38 @@ clutterperl_event_set_time (ClutterEvent *event,
     case CLUTTER_MOTION:
       event->motion.time = time_;
       break;
+
     case CLUTTER_BUTTON_PRESS:
     case CLUTTER_BUTTON_RELEASE:
       event->button.time = time_;
       break;
+
     case CLUTTER_KEY_PRESS:
     case CLUTTER_KEY_RELEASE:
       event->key.time = time_;
       break;
+
     case CLUTTER_SCROLL:
       event->scroll.time = time_;
       break;
+
     case CLUTTER_ENTER:
     case CLUTTER_LEAVE:
       event->crossing.time = time_;
       break;
+
     case CLUTTER_STAGE_STATE:
       event->stage_state.time = time_;
       break;
+
     default:
       break;
     }
-}
-
-static guint
-clutterperl_event_get_time (ClutterEvent *event)
-{
-  guint retval = 0;
-
-  if (!event)
-    return retval;
-  
-  switch (event->type)
-    {
-    case CLUTTER_MOTION:
-      retval = event->motion.time;
-      break;
-    case CLUTTER_BUTTON_PRESS:
-    case CLUTTER_BUTTON_RELEASE:
-      retval = event->button.time;
-      break;
-    case CLUTTER_KEY_PRESS:
-    case CLUTTER_KEY_RELEASE:
-      retval = event->key.time;
-      break;
-    case CLUTTER_SCROLL:
-      retval = event->scroll.time;
-      break;
-    case CLUTTER_ENTER:
-    case CLUTTER_LEAVE:
-      retval = event->crossing.time;
-      break;
-    case CLUTTER_STAGE_STATE:
-      retval = event->stage_state.time;
-      break;
-    default:
-      break;
-    }
-
-  return retval;
 }
 
 static void
-clutterperl_event_set_modifier_state (ClutterEvent        *event,
-				      ClutterModifierType  state)
+clutterperl_event_set_state (ClutterEvent        *event,
+                             ClutterModifierType  state)
 {
   if (!event)
     return;
@@ -149,51 +124,24 @@ clutterperl_event_set_modifier_state (ClutterEvent        *event,
     case CLUTTER_MOTION:
       event->motion.modifier_state = state;
       break;
+
     case CLUTTER_BUTTON_PRESS:
     case CLUTTER_BUTTON_RELEASE:
       event->button.modifier_state = state;
       break;
+
     case CLUTTER_KEY_PRESS:
     case CLUTTER_KEY_RELEASE:
       event->key.modifier_state = state;
       break;
+
     case CLUTTER_SCROLL:
       event->scroll.modifier_state = state;
       break;
+
     default:
       break;
     }
-}
-
-static ClutterModifierType
-clutterperl_event_get_modifier_state (ClutterEvent *event)
-{
-  ClutterModifierType retval = 0;
-
-  if (!event)
-    return retval;
-  
-  switch (event->type)
-    {
-    case CLUTTER_MOTION:
-      retval = event->motion.modifier_state;
-      break;
-    case CLUTTER_BUTTON_PRESS:
-    case CLUTTER_BUTTON_RELEASE:
-      retval = event->button.modifier_state;
-      break;
-    case CLUTTER_KEY_PRESS:
-    case CLUTTER_KEY_RELEASE:
-      retval = event->key.modifier_state;
-      break;
-    case CLUTTER_SCROLL:
-      retval = event->scroll.modifier_state;
-      break;
-    default:
-      break;
-    }
-
-  return retval;
 }
 
 /* initialized in the boot section */
@@ -235,6 +183,9 @@ clutterperl_event_unwrap (GType       gtype,
 }
 
 MODULE = Clutter::Event		PACKAGE = Clutter::Event	PREFIX = clutter_event_
+
+=for object Clutter::Event - User and window system events
+=cut
 
 =head1 EVENT TYPES
 
@@ -322,7 +273,7 @@ clutter_event_get_time (event, ...)
 	  croak ("Usage: Clutter::Event::get_time (event)");
 	if (ix == 2 && items != 2)
 	  croak ("Usage: Clutter::Event::set_time (event, newtime)");
-	RETVAL = clutterperl_event_get_time (event);
+	RETVAL = clutter_event_get_time (event);
 	if (items == 2 || ix == 2)
 	  clutterperl_event_set_time (event, SvIV (ST (1)));
     OUTPUT:
@@ -355,21 +306,21 @@ clutter_event_get_state (event, ...)
 	  croak ("Usage: Clutter::Event::get_state (event)");
 	if (ix == 2 && items != 2)
 	  croak ("Usage: Clutter::Event::set_state (event, newstate)");
-	RETVAL = clutterperl_event_get_modifier_state (event);
+	RETVAL = clutter_event_get_state (event);
 	if (items == 2 || ix == 2)
-	  clutterperl_event_set_modifier_state (event, SvIV (ST (1)));
+	  clutterperl_event_set_state (event, SvIV (ST (1)));
     OUTPUT:
         RETVAL
 
 void
 clutter_event_get_coords (ClutterEvent_ornull *event)
     PREINIT:
-        gint x, y;
+        gfloat x, y;
     PPCODE:
         clutter_event_get_coords (event, &x, &y);
         EXTEND (SP, 2);
-        PUSHs (sv_2mortal (newSViv (x)));
-        PUSHs (sv_2mortal (newSViv (y)));
+        PUSHs (sv_2mortal (newSVnv (x)));
+        PUSHs (sv_2mortal (newSVnv (y)));
 
 ClutterActor_ornull *
 clutter_event_get_source (ClutterEvent *event)
@@ -398,6 +349,16 @@ clutter_event_get_device_id (ClutterEvent *event)
     CODE:
         PERL_UNUSED_VAR (ix);
         RETVAL = clutter_event_get_device_id (event);
+    OUTPUT:
+        RETVAL
+
+ClutterInputDeviceType
+clutter_event_get_device_type (ClutterEvent *event)
+    ALIAS:
+        Clutter::Event::device_type = 1
+    CODE:
+        PERL_UNUSED_VAR (ix);
+        RETVAL = clutter_event_get_device_type (event);
     OUTPUT:
         RETVAL
 
@@ -433,12 +394,18 @@ clutter_events_pending (class)
 ##   StageStage: Stage state changes
 
 ClutterEventType
-type (event)
-	ClutterEvent * event
+type (ClutterEvent *event)
     CODE:
-	RETVAL = event->any.type;
+	RETVAL = clutter_event_type (event);
     OUTPUT:
 	RETVAL
+
+guint32
+get_current_event_time (class)
+    CODE:
+        RETVAL = clutter_get_current_event_time ();
+    OUTPUT:
+        RETVAL
 
 MODULE = Clutter::Event		PACKAGE = Clutter::Event::Motion
 
@@ -536,30 +503,36 @@ BOOT:
 	gperl_set_isa ("Clutter::Event::Key", "Clutter::Event");
 
 guint
-keyval (ClutterEvent *event, guint newvalue=0)
+key_symbol (ClutterEvent *event, guint newvalue=0)
     ALIAS:
-        Clutter::Event::Key::symbol = 1
+        Clutter::Event::Key::keyval = 1
     CODE:
         PERL_UNUSED_VAR (ix);
-	RETVAL = event->key.keyval;
+	RETVAL = clutter_event_get_key_symbol (event);
 	if (items == 2)
 	  event->key.keyval = newvalue;
     OUTPUT:
 	RETVAL
 
 guint16
-hardware_keycode (ClutterEvent *event, guint16 newvalue=0)
+key_code (ClutterEvent *event, guint16 newvalue=0)
+    ALIAS:
+        Clutter::Event::Key::hardware_keycode = 1
     CODE:
-	RETVAL = event->key.hardware_keycode;
+        PERL_UNUSED_VAR (ix);
+	RETVAL = clutter_event_get_key_code (event);
 	if (items == 2)
 	  event->key.hardware_keycode = newvalue;
     OUTPUT:
 	RETVAL
 
 guint32
-unicode (ClutterEvent *event)
+key_unicode (ClutterEvent *event)
+    ALIAS:
+        Clutter::Event::Key::unicode = 1
     CODE:
-        RETVAL = clutter_key_event_unicode ((ClutterKeyEvent *) event);
+        PERL_UNUSED_VAR (ix);
+        RETVAL = clutter_event_get_key_unicode (event);
     OUTPUT:
         RETVAL
 

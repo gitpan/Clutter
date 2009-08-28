@@ -23,9 +23,30 @@
  * Boston, MA 02111-1307, USA.
  */
 
-#include "clutterperl.h"
+#include "clutter-perl-private.h"
 
 MODULE = Clutter::Group		PACKAGE = Clutter::Group	PREFIX = clutter_group_
+
+=for object Clutter::Group - Actor class containing multiple children
+=cut
+
+=for position DESCRIPTION
+
+=head1 SYNOPSIS
+
+    my $group = Clutter::Group->new();
+    $group->add($background, $image, $label);
+
+=head1 DESCRIPTION
+
+B<Clutter::Group> is a Clutter::Actor which contains multiple child actors
+positioned relative to the Group position. Other operations such as scaling,
+rotating and clipping of the group will apply to the child actors.
+
+A Clutter::Group's size is defined by the size and position of its children.
+Resize requests via the Actor API will be ignored.
+
+=cut
 
 ClutterActor_noinc *
 clutter_group_new (class)
@@ -40,6 +61,3 @@ clutter_group_get_n_children (ClutterGroup *group)
 
 ClutterActor *
 clutter_group_get_nth_child (ClutterGroup *group, gint index)
-
-void
-clutter_group_sort_depth_order (ClutterGroup *group)

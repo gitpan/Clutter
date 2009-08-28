@@ -1,157 +1,66 @@
-#include "clutterperl.h"
-
-#define HFETCHIV(hv,key) \
-        (((svp = hv_fetch ((hv), (key), strlen ((key)), FALSE)) \
-          && SvOK (*svp))                                       \
-          ? SvIV (*svp)                                         \
-          : 0)
-
-#define AFETCHIV(av,index) \
-        (((svp = av_fetch ((av), (index), FALSE))               \
-          && SvOK (*svp))                                       \
-          ? SvIV (*svp)                                         \
-          : 0)
-
-static GPerlBoxedWrapperClass clutter_knot_wrapper_class;
-
-static SV *
-clutter_knot_wrap (GType        gtype,
-                   const gchar *package,
-                   gpointer     boxed,
-                   gboolean     own)
-{
-        ClutterKnot *knot = boxed;
-        AV *av;
-
-        if (!knot)
-                return &PL_sv_undef;
-
-        av = newAV ();
-
-        av_push (av, newSVuv (knot->x));
-        av_push (av, newSVuv (knot->y));
-
-        if (own)
-                clutter_knot_free (knot);
-        
-        return newRV_noinc ((SV *) av);
-}
-
-static void *
-clutter_knot_unwrap (GType        gtype,
-                     const gchar *package,
-                     SV          *sv)
-{
-        ClutterKnot *knot;
-        SV **svp;
-
-        if (!sv || !SvOK (sv) || !SvRV (sv))
-                return NULL;
-
-        knot = gperl_alloc_temp (sizeof (ClutterKnot));
-
-        switch (SvTYPE (SvRV (sv))) {
-                case SVt_PVHV:
-                        {
-                        HV *hv = (HV *) SvRV (sv);
-                        knot->x = HFETCHIV (hv, "x");
-                        knot->y = HFETCHIV (hv, "y");
-                        }
-                        break;
-                case SVt_PVAV:
-                        {
-                        AV *av = (AV *) SvRV (sv);
-                        knot->x = AFETCHIV (av, 0);
-                        knot->y = AFETCHIV (av, 1);
-                        }
-                        break;
-                default:
-                        croak ("a ClutterKnot must either be an array "
-                               "or an hash with two values: x and y");
-                        break;
-       }
-
-       return knot;
-}
-
-MODULE = Clutter::Behaviour::Path       PACKAGE = Clutter::Knot PREFIX = clutter_knot_
-
-BOOT:
-        PERL_UNUSED_VAR (file);
-        clutter_knot_wrapper_class = * gperl_default_boxed_wrapper_class ();
-        clutter_knot_wrapper_class.wrap = clutter_knot_wrap;
-        clutter_knot_wrapper_class.unwrap = clutter_knot_unwrap;
-        gperl_register_boxed (CLUTTER_TYPE_KNOT, "Clutter::Knot",
-                              &clutter_knot_wrapper_class);
-
-gboolean
-clutter_knot_equal (ClutterKnot *knot_a, ClutterKnot *knot_b)
-
+#include "clutter-perl-private.h"
 
 MODULE = Clutter::Behaviour::Path       PACKAGE = Clutter::Behaviour::Path      PREFIX = clutter_behaviour_path_
 
-=for apidoc
-=for signature behaviour = Clutter::Behaviour::Path->new ($alpha, ...)
-=for arg knot (__hide__)
-=for arg ... list of knots
+=for object Clutter::Behaviour::Path - A behaviour for moving actors along a Clutter::Path
 =cut
+
+=for position DESCRIPTION
+
+=head1 SYNOPSIS
+
+    my $path = Clutter::Path->new('M 10,10 C 20,20 20,20 10,30 z');
+
+    my $behaviour = Clutter::Behaviour::Path->new($alpha, $path);
+    $behaviour->apply($rectangle);
+
+=head1 DESCRIPTION
+
+L<Clutter::Behaviour::Path> interpolates actors along a defined path.
+
+A path is described by a L<Clutter::Path> object. The path can contain
+straight line parts and bezier curves. If the path contains 'move-to' nodes
+then the actors will jump to those coordinates. This can be used make
+disjoint paths.
+
+When creating a path behaviour in a L<Clutter::Script>, you can specify
+the path property directly as a string. For example:
+
+    {
+      "id"     : "spline-path",
+      "type"   : "ClutterBehaviourPath",
+      "path"   : "M 50 50 L 100 100",
+      "alpha"  : {
+        "timeline" : "main-timeline",
+        "function" : "ramp
+      }
+    }
+
+B<Note>: If the alpha function is a periodic function, i.e. it returns to
+0 after reaching the maximum alpha value, then the actors will walk the
+path backwards to the starting node.
+
+=cut
+
+=for position SEE_ALSO
+
+=head1 SEE ALSO
+
+L<Clutter::Path>, L<Clutter::Behaviour>, L<Clutter::Alpha>
+
+=cut
+
 ClutterBehaviour_noinc *
-clutter_behaviour_path_new (class, alpha, knot=NULL, ...)
+clutter_behaviour_path_new (class, alpha=NULL, path=NULL)
         ClutterAlpha_ornull *alpha
-        ClutterKnot_ornull *knot
-    PREINIT:
-        ClutterBehaviourPath *path;
-        int i;
+        ClutterPath_ornull *path
     CODE:
-        RETVAL = clutter_behaviour_path_new (alpha, NULL, 0);
-        path = CLUTTER_BEHAVIOUR_PATH (RETVAL);
-        for (i = 2; i < items; i++) {
-                clutter_behaviour_path_append_knot (path,
-                                                    SvClutterKnot (ST (i)));
-        }
+        RETVAL = clutter_behaviour_path_new (alpha, path);
     OUTPUT:
         RETVAL
 
-=for apidoc
-=for arg knot (__hide__)
-=for arg ... list of knots
-=cut
-void
-clutter_behaviour_path_append_knot (behaviour, knot, ...)
-        ClutterBehaviourPath *behaviour
-        ClutterKnot *knot
-    PREINIT:
-        int i;
-    CODE:
-        clutter_behaviour_path_append_knot (behaviour, knot);
-        for (i = 2; i < items; i++) {
-                clutter_behaviour_path_append_knot (behaviour,
-                                                    SvClutterKnot (ST (i)));
-        }
+ClutterPath *
+clutter_behaviour_path_get_path (ClutterBehaviourPath *behaviour)
 
 void
-clutter_behaviour_path_insert_knot (behaviour, offset, knot)
-        ClutterBehaviourPath *behaviour
-        guint offset
-        ClutterKnot *knot
-
-void
-clutter_behaviour_path_remove_knot (behaviour, offset)
-        ClutterBehaviourPath *behaviour
-        guint offset
-
-void
-clutter_behaviour_path_get_knots (behaviour)
-        ClutterBehaviourPath *behaviour
-    PREINIT:
-        GSList *knots, *l;
-    PPCODE:
-        knots = clutter_behaviour_path_get_knots (behaviour);
-        for (l = knots; l; l = l->next) {
-                XPUSHs (sv_2mortal (newSVClutterKnot (l->data)));
-        }
-        g_slist_free (knots);
-
-void
-clutter_behaviour_path_clear (behaviour)
-        ClutterBehaviourPath *behaviour
+clutter_behaviour_path_set_path (ClutterBehaviourPath *behaviour, ClutterPath_ornull *path)

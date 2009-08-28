@@ -23,7 +23,7 @@
  * Boston, MA 02111-1307, USA.
  */
 
-#include "clutterperl.h"
+#include "clutter-perl-private.h"
 
 #define PREP(obj)                                       \
         dSP;                                            \
@@ -182,6 +182,9 @@ clutterperl_model_iter_class_init (ClutterModelIterClass *klass)
 }
 
 MODULE = Clutter::Model::Iter   PACKAGE = Clutter::Model::Iter  PREFIX = clutter_model_iter_
+
+=for object Clutter::Model::Iter - An iterator object for Clutter::Model
+=cut
 
 =for apidoc
 =for arg ... of column indices

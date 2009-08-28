@@ -23,9 +23,12 @@
  * Boston, MA 02111-1307, USA.
  */
 
-#include "clutterperl.h"
+#include "clutter-perl-private.h"
 
 MODULE = Clutter::Texture PACKAGE = Clutter::Texture PREFIX = clutter_texture_
+
+=for object Clutter::Texture - An actor for displaying and manipulating images
+=cut
 
 =for enum ClutterTextureFlags
 =cut
@@ -72,9 +75,6 @@ clutter_texture_set_filter_quality (ClutterTexture *texture, ClutterTextureQuali
 
 ClutterTextureQuality
 clutter_texture_get_filter_quality (ClutterTexture *texture)
-
-void
-clutter_texture_set_max_tile_waste (ClutterTexture *texture, gint max_tile_waste)
 
 gint
 clutter_texture_get_max_tile_waste (ClutterTexture *texture)

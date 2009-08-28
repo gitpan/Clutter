@@ -23,9 +23,25 @@
  * Boston, MA 02111-1307, USA.
  */
 
-#include "clutterperl.h"
+#include "clutter-perl-private.h"
 
 MODULE = Clutter::Backend       PACKAGE = Clutter::Backend      PREFIX = clutter_backend_
+
+=for object Clutter::Backend - Clutter Backend abstraction
+=cut
+
+=for position DESCRIPTION
+
+=head1 DESCRIPTION
+
+Clutter can be compiled against different backends. Each backend
+has to implement a set of functions, in order to be used by Clutter.
+
+B<Clutter::Backend is the base class abstracting the various implementation;
+it provides a basic API to query the backend for generic information
+and settings.
+
+=cut
 
 ClutterBackend_noinc *
 clutter_backend_get_default (class)
@@ -79,5 +95,5 @@ const cairo_font_options_t *
 clutter_backend_get_font_options (ClutterBackend *backend)
 
 void
-clutter_backend_set_font_options (ClutterBackend *backend, cairo_font_options_t_ornull *options)
+clutter_backend_set_font_options (ClutterBackend *backend, const cairo_font_options_t_ornull *options)
 
