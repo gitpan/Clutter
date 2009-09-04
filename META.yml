@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                Clutter
-version:             1.001
+version:             1.002
 abstract:            Simple GL-based canvas library
 license:             perl, lgpl
 author:              
