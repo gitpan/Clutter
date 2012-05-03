@@ -1,7 +1,0 @@
-# this is where Clutter handcoded typemap stuff resides
-TYPEMAP
-
-# these are just fixed point values encoded into integers
-
-CoglHandle              T_GPERL_GENERIC_WRAPPER
-CoglMatrix *            T_GPERL_GENERIC_WRAPPER
